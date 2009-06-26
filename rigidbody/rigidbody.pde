@@ -77,6 +77,9 @@ class body {
   
   void update() {
     
+    
+    
+    
     float[] pqrMat  =  {0,     -pqr.x, -pqr.y,  -pqr.z,
                         pqr.x,  0,      pqr.z,  -pqr.y,
                         pqr.y, -pqr.z,  0,       pqr.x,
@@ -104,8 +107,27 @@ class body {
     rf = rot.toArray();
     //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
     
-  
+    /// gravity
+    vel.x -=   0.2;
+    
     pos =  pos.add(vel);
+    
+    /// bounce off ground
+    if (pos.x  < 0) { 
+      pos.x = 0;
+      if (vel.x < 0) vel.x = -vel.x*0.5; 
+      
+      if (vel.x < 0.1){
+      pqr.x *= 0.9;
+      pqr.y *= 0.9;
+      pqr.z *= 0.9; 
+      
+      /// add a random boost
+      if (random(1.0) < 0.05) {
+          vel.x = 8 + random(5.0);
+      }
+      }
+    }
   }
   
   void apply() {
@@ -160,10 +182,11 @@ body cam;
 
 
 void setup() {
-  frameRate(5);
+  frameRate(15);
  size(500,500,P3D); 
  
  vehicle = new body();
+ vehicle.vel.x += 10;
  cam = new body();
 }
 
@@ -233,7 +256,10 @@ void draw() {
   time += 0.01;
   
   background(0);
-  translate(width/2,height/2); 
+  translate(width/2,height/2+200); 
+  
+  
+  rotateZ(-PI/2);
   
   cam.update();
   //translate(cam.pos.x,cam.pos.y,cam.pos.z);

@@ -1,3 +1,9 @@
+/** 
+binarymillenium
+GPL v3.0
+June 2009
+
+*/
 
    Vec3D rotateAxis(Quaternion rot, Vec3D ax) {
     /* // get the angle and axis of existing quat
@@ -22,7 +28,25 @@
                
        return rax;
      
-   }
+}
+  
+/////
+
+
+Quaternion MatMultQuat(float[] m, Quaternion q) {
+  float q0 = q.toArray()[0];
+  float q1 = q.toArray()[1];
+  float q2 = q.toArray()[2];
+  float q3 = q.toArray()[3]; 
+  
+  float nq0 =  q0*m[0] + q1*m[1] + q2*m[2] + q3*m[3];
+  float nq1 =  q0*m[4] + q1*m[5] + q2*m[6] + q3*m[7];
+  float nq2 =  q0*m[8] + q1*m[9] + q2*m[10]+ q3*m[11];
+  float nq3 =  q0*m[12]+ q1*m[13]+ q2*m[14]+ q3*m[15];
+  
+  return new Quaternion(nq3, new Vec3D(nq0,nq1,nq2));
+}
+   
    
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////  

@@ -10,19 +10,7 @@ import toxi.geom.*;
 body vehicle; 
 movable cam;
 
-Quaternion MatMultQuat(float[] m, Quaternion q) {
-  float q0 = q.toArray()[0];
-  float q1 = q.toArray()[1];
-  float q2 = q.toArray()[2];
-  float q3 = q.toArray()[3]; 
-  
-  float nq0 =  q0*m[0] + q1*m[1] + q2*m[2] + q3*m[3];
-  float nq1 =  q0*m[4] + q1*m[5] + q2*m[6] + q3*m[7];
-  float nq2 =  q0*m[8] + q1*m[9] + q2*m[10]+ q3*m[11];
-  float nq3 =  q0*m[12]+ q1*m[13]+ q2*m[14]+ q3*m[15];
-  
-  return new Quaternion(nq3, new Vec3D(nq0,nq1,nq2));
-}
+terrain land;
 
 void drawArrow(float len, float rad, color col ) {
   pushMatrix();
@@ -60,12 +48,14 @@ void drawArrow(float len, float rad, color col ) {
 
 
 void setup() {
+  size(800,600,P3D); 
   frameRate(15);
- size(800,600,P3D); 
  
- vehicle = new body();
- vehicle.vel.x += 10;
- cam = new body();
+  vehicle = new body();
+  vehicle.vel.x += 10;
+  cam = new body();
+  
+  land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
 }
 
 //////////////////////////////////////////////////////
@@ -174,7 +164,7 @@ void draw() {
   //println("test");
   time += 0.01;
   
-  background(0);
+  background(128);
   translate(width/2,height/2); 
   
   pushMatrix();
@@ -186,7 +176,8 @@ void draw() {
   cam.pqr = cam.pqr.scale(0.8);
   cam.apply();
   
-  drawGrid();
+  //drawGrid();
+  land.draw();
   
   //translate(cam.pos.x,cam.pos.y,cam.pos.z);
   

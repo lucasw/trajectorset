@@ -1,5 +1,14 @@
+/** 
+binarymillenium
+GPL v3.0
+June 2009
+
+*/
 
 import toxi.geom.*;
+
+body vehicle; 
+movable cam;
 
 Quaternion MatMultQuat(float[] m, Quaternion q) {
   float q0 = q.toArray()[0];
@@ -15,7 +24,7 @@ Quaternion MatMultQuat(float[] m, Quaternion q) {
   return new Quaternion(nq3, new Vec3D(nq0,nq1,nq2));
 }
 
-void draw_arrow(float len, float rad, color col ) {
+void drawArrow(float len, float rad, color col ) {
   pushMatrix();
         
   noStroke();
@@ -48,142 +57,11 @@ void draw_arrow(float len, float rad, color col ) {
   popMatrix();  
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-
-class body {
-  Vec3D pos;
-  Vec3D vel;
-  
-  Quaternion rot;
-  /// TBD what is the best representation of rotational
-  // inertia?  Used to moment of inertia matrices.
-  // see http://www.mathworks.com/access/helpdesk/help/toolbox/aeroblks/index.html?/access/helpdesk/help/toolbox/aeroblks/simplevariablemass6dofquaternion.html&http://www.google.com/search?client=firefox-a&rls=org.mozilla%3Aen-US%3Aofficial&channel=s&hl=en&q=quaternion+inertia&btnG=Google+Search
-  Vec3D pqr;
-  
-  /// looking at own ancient code from
-  /// http://icculus.org/~lucasw/Dynamics/volume-src-limited-0.0.12.tgz
-  /// http://icculus.org/~lucasw/Dynamics/Rigid%20Body%20Dynamics.html
-  Vec3D force;
-  Vec3D torque;  // can be multiply by dt and added to pqr? 
-  
-  body() {
-     pos = new Vec3D(0,0,0);
-     vel = new Vec3D(0,0,0);
-     rot = new Quaternion(0,new Vec3D(1,0,0));
-     pqr = new Vec3D(0,0,0);
-     force = new Vec3D(0,0,0);
-     torque = new Vec3D(0,0,0);
-  }
-  
-  void update() {
-    
-    
-    
-    
-    float[] pqrMat  =  {0,     -pqr.x, -pqr.y,  -pqr.z,
-                        pqr.x,  0,      pqr.z,  -pqr.y,
-                        pqr.y, -pqr.z,  0,       pqr.x,
-                        pqr.z,  pqr.y, -pqr.x,  -0};
-     
-    float[] rf;
-   
-    rf  = rot.toArray();              
-    float epsilon = 1 - (rf[0]*rf[0] + rf[1]*rf[1] + rf[2]*rf[2] + rf[3]*rf[3]);
-    float k = 0.01;
-    
-    //add rot Quaternion qdot 
-    rf = rot.toArray();
-    //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
-    
-    Quaternion qdot = MatMultQuat(pqrMat,rot);
-    //rot = rot.add(  );//.scale(0.5) ); //.add(rot.scale(k*epsilon)) );
-    // add is buggy or doesn't do what I think it should
-    // so far the only quat operation worthwhile is multiply
-    
-    float[] qdf = qdot.toArray();
-    
-    rot = new Quaternion(qdf[3] + rf[3], new Vec3D(0.5*qdf[0] + rf[0], 0.5*qdf[1] + rf[1],0.5*qdf[2] + rf[2]  ));
-    rot = rot.normalize();
-    rf = rot.toArray();
-    //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
-    
-    /// gravity
-    vel.x -=   0.2;
-    
-    pos =  pos.add(vel);
-    
-    /// bounce off ground
-    if (pos.x  < 0) { 
-      pos.x = 0;
-      if (vel.x < 0) vel.x = -vel.x*0.5; 
-      
-      if (vel.x < 0.1){
-      pqr.x *= 0.9;
-      pqr.y *= 0.9;
-      pqr.z *= 0.9; 
-      
-      /// add a random boost
-      if (random(1.0) < 0.05) {
-          vel.x = 8 + random(5.0);
-      }
-      }
-    }
-  }
-  
-  void apply() {
-    
-     applyMatrix( 1, 0, 0, (float)pos.x,  
-                   0, 1, 0, (float)pos.y,  
-                   0, 0, 1, (float)pos.z,  
-                   0, 0, 0, 1  ); 
-                   
-    Matrix4x4 m = rot.getMatrix();  
-    
-    
-      applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
-                   (float)m.matrix[1][0], (float)m.matrix[1][1], (float)m.matrix[1][2], 0,  
-                   (float)m.matrix[2][0], (float)m.matrix[2][1], (float)m.matrix[2][2], 0,  
-                   (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  ); 
-  }
-  
-  void draw() {
-    pushMatrix();
-     
-    
-    apply();
-
-    
-    float len = 30;
-    float rad = 7;
-    draw_arrow(len*1.5,  rad*1.5, color(200,255,230) );
-      pushMatrix();
-      applyMatrix( 0, 1, 0, 0,  
-                   0, 0, 1, 0,  
-                   1, 0, 0, 0,
-                   0, 0, 0, 1  ); 
-      draw_arrow(len, rad, color(0,255,0));
-      popMatrix();
-      pushMatrix();
-       applyMatrix( 0, 1, 0, 0,  
-                    1, 0, 0, 0,  
-                    0, 0, 1, 0,
-                    0, 0, 0, 1  ); 
-      draw_arrow(len, rad, color(255,0,0));
-      popMatrix();
-
-
-    popMatrix();
-  }
-};
-
-
-body vehicle; 
-body cam;
 
 
 void setup() {
   frameRate(15);
- size(500,500,P3D); 
+ size(800,600,P3D); 
  
  vehicle = new body();
  vehicle.vel.x += 10;
@@ -211,57 +89,105 @@ float decrease(float x) {
   return x;
 }
 
-void handleKeys()
-{
- if (keyPressed) {
+void keyPressed() {
+ //if (keyPressed) {
+   
     if (key == 'a') {
-       cam.vel.x = increase(cam.vel.x);
-       println(cam.pos.x);
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(1,0,0));
+       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
+       println(cam.offsetVel.x);
     }
     if (key == 'd') {
-        cam.vel.x = decrease(cam.vel.x);
+        Vec3D dir = rotateAxis(cam.rot, new Vec3D(-1,0,0));
+       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }
     if (key == 'q') {
-       cam.vel.y = increase(cam.vel.y); 
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,1,0));
+       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }
     if (key == 'z') {
-       cam.vel.y = decrease(cam.vel.y); 
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,-1,0));
+       cam.offsetVel = cam.offsetVel.add(dir.scale(10) ); 
     }
     if (key == 'w') {
-       cam.vel.z = increase(cam.vel.z);
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
+       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }
     if (key == 's') {
-       cam.vel.z = decrease(cam.vel.z);
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
+       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }    
     if (key == 'e') {
-       //cam.offset.z += 10; 
-       //println(cam.offset.z);
-      
+       cam.vel.z = increase(cam.vel.z); 
+       println(cam.pos.z); 
     }
     if (key == 'c') {
-      //cam.offset.z -= 9;
+      cam.pos.z = decrease(cam.vel.z);
       //println(cam.offset.z);
     }
-}
+//}
 }
 
+void handleMouse() {
+        if (mousePressed) {
+    /*
+    println("start " + cam.rot.toArray()[0] + " " + 
+            cam.rot.toArray()[1] + " " + 
+            cam.rot.toArray()[2] + " " +
+            cam.rot.toArray()[3]  );*/
+    
+    //cam.rot = cam.rot.normalize();  
+    /// the ordering is xyzw, not wxyz
+     
+    float dx = (mouseX - oldMouseX)/500.0;
+    float dy = (mouseY - oldMouseY)/500.0;
+    
+    Vec3D axis;
+    if (mouseButton == RIGHT) {
+      axis = new Vec3D(0,0,-1);
+      cam.rotateBody(dx, axis);
+    } else {
+      axis = new Vec3D(0,1,0);
+      cam.rotateAbs(-dx, axis);
+    }
+    
+    Vec3D y_axis = new Vec3D(-1,0,0);
+    //cam.rotateAbs(dy, y_axis);
+    cam.rotateBody(dy, y_axis);
+        }
+  
+  oldMouseX = mouseX;
+  oldMouseY = mouseY;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
 float time = 0;
+float oldMouseX = 0;
+float oldMouseY = 0;
 
 void draw() {
+  
+  handleMouse();
+ 
   
   //println("test");
   time += 0.01;
   
   background(0);
-  translate(width/2,height/2+200); 
+  translate(width/2,height/2); 
   
-  
-  rotateZ(-PI/2);
+  pushMatrix();
+  //rotateZ(-PI/2);
   
   cam.update();
+  cam.vel = cam.vel.scale(0.8);
+  cam.offsetVel = cam.offsetVel.scale(0.8);
+  cam.pqr = cam.pqr.scale(0.8);
+  cam.apply();
+  
+  drawGrid();
+  
   //translate(cam.pos.x,cam.pos.y,cam.pos.z);
   
   vehicle.pqr.x += 0.002*(noise(time)-0.5);
@@ -272,4 +198,23 @@ void draw() {
   vehicle.update();
   //println(vehicle.vel.x + ", " +vehicle.pos.x);
   vehicle.draw();
+  
+  popMatrix();
+}
+
+
+void drawGrid() {
+  float sc = 1;
+   // draw grid
+    int maxGridInd = 20;
+    float spacing = 3000*sc;
+    for (int i = 0; i < maxGridInd; i++) { 
+      stroke(220,130,5);
+      float xorz = i*spacing-  maxGridInd/2*spacing;
+      line(-maxGridInd/2*spacing,50, xorz, maxGridInd/2*spacing,50, xorz);
+      /// depth testing seems to be done only on the nearest part of the line, not each
+      /// pixel
+      stroke(120,190,5); 
+      line(xorz, 50, -maxGridInd/2*spacing,  xorz, 50,maxGridInd/2*spacing);
+  } 
 }

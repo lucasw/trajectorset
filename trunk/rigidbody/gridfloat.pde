@@ -7,6 +7,8 @@ June 2009
 
 class terrain {
   
+  PImage tex;
+  
   float [][] heights;
   float [] xs;
   float [] ys;
@@ -51,6 +53,9 @@ class terrain {
   /// path to hdr and flt files
   /// download some data from seamless.usgs.gov in gridfloat format
   terrain(String filepath) {
+    
+    /// png converted from geotiffs
+    tex = loadImage(filepath + ".png");
     
     String lines[] = loadStrings(filepath + ".hdr");
 
@@ -131,29 +136,29 @@ class terrain {
   void draw() {
     pushMatrix();
     
-    directionalLight(255,255,240,-0.1,1,0);
-    directionalLight(30,45,30,-0.2,-1,0);
+    directionalLight(255,255,210,-0.6,-1,0);
+    directionalLight(30,45,30,-0.2,1,0);
   
-    translate(0,-1100,0);
+    translate(0,-200,0);
     fill(255,255,255);
     
     //noFill();
     noStroke();
-    //textureMode(IMAGE);
+    textureMode(IMAGE);
     int skip = 8;
   
     for (int h = 0; h<= nrows-1-skip; h+= skip) {  
        beginShape(TRIANGLE_STRIP);
-       //texture(tex);
+       texture(tex);
     for (int w = 0; w <= ncols-skip; w+= skip) {
 
-       fill(255,128+128*norm(xs[w],minll.y,maxur.y), 255*norm(heights[h][w],minll.z,maxur.z)) ;
+       //fill(255,128+128*norm(xs[w],minll.y,maxur.y), 255*norm(heights[h][w],minll.z,maxur.z)) ;
 
 
         //println(xs[w] + ", " +  ys[h] +", " + heights[h][w] + ",\t" +
         //         xs[w] + ", " +  ys[h+1] +", " + heights[h+1][w] );
-       vertex(xs[w], heights[h][w], ys[h]); //,  tex.width*i/WIDTH, tex.height*j/HEIGHT);
-       vertex(xs[w], heights[h+skip][w], ys[h+skip]); //,  tex.width*i/WIDTH, tex.height*(j+skip)/HEIGHT);
+       vertex(xs[w], heights[h][w],      ys[h],       tex.width*w/ncols, tex.height*h/nrows);
+       vertex(xs[w], heights[h+skip][w], ys[h+skip],  tex.width*w/ncols, tex.height*(h+skip)/nrows);
        
       }
       endShape();

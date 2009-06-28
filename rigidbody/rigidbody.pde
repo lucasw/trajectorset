@@ -1,3 +1,5 @@
+import processing.opengl.*;
+
 /** 
 binarymillenium
 GPL v3.0
@@ -55,7 +57,8 @@ void setup() {
   vehicle.vel.x += 10;
   cam = new body();
   
-  land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
+  //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
+  land = new terrain("78184666");
 }
 
 //////////////////////////////////////////////////////
@@ -150,6 +153,37 @@ void handleMouse() {
   oldMouseY = mouseY;
 }
 
+void  drawSky() {
+  background(0);
+  noStroke();
+
+  beginShape();
+  fill(20,20,255);
+  vertex(-width/2, -height/2);
+  fill(20,20,255);
+  vertex( width/2, -height/2);  
+  fill(255,255,255);
+  vertex( width/2,  0);  
+  fill(255,255,255);
+  vertex(-width/2,  0);  
+      
+  endShape();
+  
+    beginShape();
+  fill(255,255,255);
+  vertex(-width/2, 0);
+  fill(255,255,255);
+  vertex( width/2, 0);  
+  fill(255,255,255);
+  vertex( width/2,  height/2);  
+  fill(255,255,255);
+  vertex(-width/2,  height/2);  
+      
+  endShape();
+    hint(DISABLE_DEPTH_TEST);
+  hint(ENABLE_DEPTH_TEST);
+  
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 float time = 0;
@@ -164,8 +198,11 @@ void draw() {
   //println("test");
   time += 0.01;
   
-  background(128);
+  //background(128);
+  
+
   translate(width/2,height/2); 
+  drawSky();
   
   pushMatrix();
   //rotateZ(-PI/2);

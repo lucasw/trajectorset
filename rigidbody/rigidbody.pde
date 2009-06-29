@@ -55,9 +55,11 @@ void setup() {
  
   vehicle = new body();
   cam = new body();
-  
+  cam.target = vehicle;
+  cam.pos = new Vec3D(-100,10,500);
+   cam.offset = new Vec3D(0,0,520);
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
-  land = new terrain("78184666");
+  //land = new terrain("78184666");
 }
 
 //////////////////////////////////////////////////////
@@ -86,40 +88,49 @@ void keyPressed() {
    
     if (key == 'a') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(1,0,0));
-       cam.offsetVel = cam.vel.add(dir.scale(10) );
+       cam.vel = cam.vel.add(dir.scale(10) );
        println(cam.offsetVel.x);
     }
     if (key == 'd') {
         Vec3D dir = rotateAxis(cam.rot, new Vec3D(-1,0,0));
-       cam.offsetVel = cam.vel.add(dir.scale(10) );
+       cam.vel= cam.vel.add(dir.scale(10) );
     }
     if (key == 'q') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,1,0));
-       cam.offsetVel = cam.vel.add(dir.scale(10) );
+       cam.vel = cam.vel.add(dir.scale(10) );
     }
     if (key == 'z') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,-1,0));
-       cam.offsetVel = cam.vel.add(dir.scale(10) ); 
+       cam.vel = cam.vel.add(dir.scale(10) ); 
     }
     if (key == 'w') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
-       cam.offsetVel = cam.vel.add(dir.scale(10) );
+       cam.vel = cam.vel.add(dir.scale(10) );
     }
     if (key == 's') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
-       cam.offsetVel = cam.vel.add(dir.scale(10) );
+       cam.vel = cam.vel.add(dir.scale(10) );
     }    
     if (key == 'e') {
-       cam.vel.z = increase(cam.offsetVel.z); 
-       println(cam.pos.z); 
+       cam.offsetVel.z = increase(cam.offsetVel.z); 
+       println(cam.offset.z); 
     }
     if (key == 'c') {
-      cam.pos.z = decrease(cam.offsetVel.z);
+      cam.offsetVel.z = decrease(cam.offsetVel.z);
       //println(cam.offset.z);
     }
     
+    if (key == 't') {
+      cam.aimTracking = !cam.aimTracking;  
+      if (cam.aimTracking) {
+         println("aiming ");
+      } else {
+         println(" not aiming"); 
+      }
+    }
+    
     if (key == 'b') {
-      Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(0,1,0));
+      Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(1,0,0));
       vehicle.vel = vehicle.vel.add(dir.scale( 13+ random(13.0)) );
       println(vehicle.vel.x + ", " + vehicle.vel.y + ", " + vehicle.vel.z);    
     }
@@ -144,10 +155,10 @@ void handleMouse() {
       Vec3D axis;
       if (mouseButton == RIGHT) {
         axis = new Vec3D(0,0,-1);
-        cam.rotateAbs(dx, axis);
+        cam.rotateAbs(-dx, axis);
       } else {
         axis = new Vec3D(0,1,0);
-        cam.rotateBody(-dx, axis);
+        cam.rotateBody(dx, axis);
       }
       
       Vec3D y_axis = new Vec3D(-1,0,0);
@@ -242,8 +253,8 @@ void draw() {
   
   /// the camera needs an applyInverse()
    cam.applyInv();
-   //drawGrid();
-  land.draw();
+   drawGrid();
+  //land.draw();
 
   //rotateZ(-PI/2);
  

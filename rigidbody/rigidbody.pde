@@ -56,7 +56,7 @@ void setup() {
   vehicle = new body();
   cam = new body();
   cam.target = vehicle;
-  cam.pos = new Vec3D(-100,10,500);
+  cam.pos = new Vec3D(300,300,800);
    cam.offset = new Vec3D(0,0,520);
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
   //land = new terrain("78184666");

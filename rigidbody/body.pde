@@ -137,6 +137,27 @@ class movable {
                  0, 0, 0, 1  ); 
   }
   
+  void applyInv() {
+    
+        applyMatrix( 1, 0, 0, (float)pos.x,  
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+  
+                 
+    Matrix4x4 m = rot.getMatrix();  
+    applyMatrix( (float)m.matrix[0][0], (float)m.matrix[1][0], (float)m.matrix[2][0], 0,  
+                 (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
+                 (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
+                 (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  ); 
+                 
+  applyMatrix( 1, 0, 0, (float)offset.x,  
+                 0, 1, 0, (float)offset.y,  
+                 0, 0, 1, (float)offset.z,  
+                 0, 0, 0, 1  );  
+
+  }
+  
   /////////////
    void rotateBody(float df,  Vec3D axis) {
 

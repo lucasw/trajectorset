@@ -85,36 +85,36 @@ void keyPressed() {
  //if (keyPressed) {
    
     if (key == 'a') {
-       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(1,0,0));
-       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(1,0,0));
+       cam.offsetVel = cam.vel.add(dir.scale(10) );
        println(cam.offsetVel.x);
     }
     if (key == 'd') {
-        Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(-1,0,0));
-       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
+        Vec3D dir = rotateAxis(cam.rot, new Vec3D(-1,0,0));
+       cam.offsetVel = cam.vel.add(dir.scale(10) );
     }
     if (key == 'q') {
-       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,1,0));
-       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,1,0));
+       cam.offsetVel = cam.vel.add(dir.scale(10) );
     }
     if (key == 'z') {
-       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,-1,0));
-       cam.offsetVel = cam.offsetVel.add(dir.scale(10) ); 
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,-1,0));
+       cam.offsetVel = cam.vel.add(dir.scale(10) ); 
     }
     if (key == 'w') {
-       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,0,1));
-       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
+       cam.offsetVel = cam.vel.add(dir.scale(10) );
     }
     if (key == 's') {
-       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,0,-1));
-       cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
+       cam.offsetVel = cam.vel.add(dir.scale(10) );
     }    
     if (key == 'e') {
-       cam.vel.z = increase(cam.vel.z); 
+       cam.vel.z = increase(cam.offsetVel.z); 
        println(cam.pos.z); 
     }
     if (key == 'c') {
-      cam.pos.z = decrease(cam.vel.z);
+      cam.pos.z = decrease(cam.offsetVel.z);
       //println(cam.offset.z);
     }
     
@@ -144,20 +144,20 @@ void handleMouse() {
       Vec3D axis;
       if (mouseButton == RIGHT) {
         axis = new Vec3D(0,0,-1);
-        cam.rotateBody(dx, axis);
+        cam.rotateAbs(dx, axis);
       } else {
         axis = new Vec3D(0,1,0);
-        cam.rotateAbs(-dx, axis);
+        cam.rotateBody(-dx, axis);
       }
       
       Vec3D y_axis = new Vec3D(-1,0,0);
-      //cam.rotateAbs(dy, y_axis);
-      cam.rotateBody(dy, y_axis);
-    }else {
+      cam.rotateAbs(-dy, y_axis);
+      //cam.rotateBody(-dy, y_axis);
+    } else {
     
-     vehicle.pqr.y += dx;
-     vehicle.pqr.x += dy;
-  }
+       vehicle.pqr.y += dx;
+       vehicle.pqr.x += dy;
+     }
   } 
 
   oldMouseX = mouseX;
@@ -214,8 +214,8 @@ void draw() {
   /////// update
    
   cam.update();
-  cam.vel = cam.vel.scale(0.8);
-  cam.offsetVel = cam.offsetVel.scale(0.8);
+  cam.vel = cam.vel.scale(0.9);
+  cam.offsetVel = cam.offsetVel.scale(0.9);
   cam.pqr = cam.pqr.scale(0.8);
  
   
@@ -241,7 +241,7 @@ void draw() {
   drawSky();
   
   /// the camera needs an applyInverse()
-   cam.apply();
+   cam.applyInv();
    //drawGrid();
   land.draw();
 

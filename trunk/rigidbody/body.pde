@@ -5,7 +5,17 @@ June 2009
 
 */
 
-   Vec3D rotateAxis(Quaternion rot, Vec3D ax) {
+Vec3D rotateAxis(Quaternion rot, Vec3D ax) {
+      Matrix4x4 m = rot.getMatrix();  
+      Vec3D rax = new Vec3D(
+                 (float)(m.matrix[0][0]*ax.x + m.matrix[0][1]*ax.y + m.matrix[0][2]*ax.z), 
+                 (float)(m.matrix[1][0]*ax.x + m.matrix[1][1]*ax.y + m.matrix[1][2]*ax.z),  
+                 (float)(m.matrix[2][0]*ax.x + m.matrix[2][1]*ax.y + m.matrix[2][2]*ax.z));
+ 
+       return rax;
+}
+
+Vec3D rotateAxisInv(Quaternion rot, Vec3D ax) {
     /* // get the angle and axis of existing quat
      float angle = 2*acos(cam.rot.toArray()[3]);
      Vec3D axis = new Vec3D(1,0,0);
@@ -19,9 +29,6 @@ June 2009
        Matrix4x4 m = rot.getMatrix();  
     
       Vec3D rax = new Vec3D(
-//                 (float)(m.matrix[0][0]*ax.x + m.matrix[0][1]*ax.y + m.matrix[0][2]*ax.z), 
-//                 (float)(m.matrix[1][0]*ax.x + m.matrix[1][1]*ax.y + m.matrix[1][2]*ax.z),  
-//                 (float)(m.matrix[2][0]*ax.x + m.matrix[2][1]*ax.y + m.matrix[2][2]*ax.z));
                  (float)(m.matrix[0][0]*ax.x + m.matrix[1][0]*ax.y + m.matrix[2][0]*ax.z), 
                  (float)(m.matrix[0][1]*ax.x + m.matrix[1][1]*ax.y + m.matrix[2][1]*ax.z),  
                  (float)(m.matrix[0][2]*ax.x + m.matrix[1][2]*ax.y + m.matrix[2][2]*ax.z));   
@@ -76,10 +83,7 @@ class movable {
   }
   
   void update() {
-    
-    
-    
-    
+ 
     float[] pqrMat  =  {0,     -pqr.x, -pqr.y,  -pqr.z,
                         pqr.x,  0,      pqr.z,  -pqr.y,
                         pqr.y, -pqr.z,  0,       pqr.x,
@@ -104,7 +108,7 @@ class movable {
     
     rot = new Quaternion(qdf[3] + rf[3], new Vec3D(0.5*qdf[0] + rf[0], 0.5*qdf[1] + rf[1],0.5*qdf[2] + rf[2]  ));
     rot = rot.normalize();
-    rf = rot.toArray();
+    //rf = rot.toArray();
     //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
     
     pos =  pos.add(vel);  
@@ -133,6 +137,7 @@ class movable {
                  0, 0, 0, 1  ); 
   }
   
+  /////////////
    void rotateBody(float df,  Vec3D axis) {
 
     Quaternion quat = new Quaternion(cos(df/2), 
@@ -142,6 +147,7 @@ class movable {
     rot = quat.multiply(rot);
    }
  
+ ///////////////
    void rotateAbs(float df,  Vec3D axis) {  
     Quaternion quat = new Quaternion(cos(df/2), 
                               new Vec3D(axis.x*sin(df/2),
@@ -202,23 +208,15 @@ class body extends movable {
     super.update();
     
     /// gravity
-    vel.x -=   0.2;
+    vel.y -=   1.0;
       
     /// bounce off ground
-    if (pos.x  < 0) { 
-      pos.x = 0;
-      if (vel.x < 0) vel.x = -vel.x*0.5; 
+    if (pos.y  < 0) { 
+      pos.y = 0;
+      if (vel.y < 0) vel.y = -vel.y*0.4; 
       
-      if (vel.x < 0.1){
-      pqr.x *= 0.9;
-      pqr.y *= 0.9;
-      pqr.z *= 0.9; 
-      
-      /// add a random boost
-      if (random(1.0) < 0.05) {
-          vel.x = 8 + random(5.0);
-      }
-      }
+      vel.x *= 0.5;
+      vel.z *= 0.5;
     }
   }
   

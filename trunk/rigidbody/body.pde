@@ -124,7 +124,7 @@ class movable {
       
       /// TBD add offset to pos
       //Vec3D pnt = rotateAxis(rot, Vec3D ax) 
-      Vec3D aim = target.pos.sub(pos).getNormalized();
+      Vec3D aim = target.pos.getInverted().sub(pos).getNormalized();
        println("pos " + pos.x + " " + pos.y + " " + pos.z);
        println("aim " + aim.x + " " + aim.y + " " + aim.z);
       
@@ -136,21 +136,15 @@ class movable {
        
        Matrix4x4 m = new Matrix4x4(
          
-         right.x,  -right.y,  right.z, 0,
-         up.x,     -up.y,     up.z,    0,
-         aim.x,    -aim.y,    aim.z,   0,
+         right.x,  right.y,  right.z, 0,
+         -up.x,     -up.y,     -up.z,    0,
+         aim.x,    aim.y,    aim.z,   0,
          0,        0,        0,       1  
        );
                   
       m = m.transpose();
      
-     println("track");
-     for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-              String se = nf( (float)(m.matrix[i][j]), 1, 3);
-              print(se + " ");
-            }
-          println();}
+ 
           
           println("rot");
           Matrix4x4 m2 = rot.getMatrix();
@@ -162,21 +156,38 @@ class movable {
           println();
         }
           
-          println();
+          
+          println("track");
+     for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+              String se = nf( (float)(m.matrix[i][j]), 1, 3);
+              print(se + " ");
+            }
+          println();}
       
-       float qw = sqrt(1 + (float)
-                       (m.matrix[0][0]*m.matrix[0][0] + 
-                        m.matrix[1][1]*m.matrix[1][1] +
-                        m.matrix[2][2]*m.matrix[2][2]))/2;
+       //m = m.transpose();
+       float s= sqrt(1 + (float)
+                       (m.matrix[0][0] + 
+                        m.matrix[1][1] +
+                        m.matrix[2][2])) * 2;
                        
-       float qx = (float)(m.matrix[2][1] - m.matrix[1][2])/(4*qw);
-       float qy = (float)(m.matrix[0][2] - m.matrix[2][0])/(4*qw);
-       float qz = (float)(m.matrix[1][0] - m.matrix[0][1])/(4*qw);
+       float qx = (float)(m.matrix[2][1] - m.matrix[1][2])/s;
+       float qy = (float)(m.matrix[0][2] - m.matrix[2][0])/s;
+       float qz = (float)(m.matrix[1][0] - m.matrix[0][1])/s;
        
+       Quaternion new_rot = new Quaternion(s/4, new Vec3D(qx,qy,qz) ).getNormalized();
        
-   
-       //rot = new Quaternion(qw, new Vec3D(qx,qy,qz) ).getNormalized();
-
+       println("rot new ");
+          Matrix4x4 m3 = new_rot.getMatrix();
+            for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+              String se = nf((float)(m3.matrix[i][j]), 1, 3);
+              print(se + " ");
+            }
+          println();
+        }println();
+        
+        rot = new_rot;
 //     float angle = acos(aim.dot(p)); 
 //      rot = new Quaternion(cos(angle/2), axis.scale(sin(angle/2)) );
       

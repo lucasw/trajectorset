@@ -139,7 +139,7 @@ class terrain {
     directionalLight(255,255,210,-0.6,-1,0);
     directionalLight(30,45,30,-0.2,1,0);
   
-    translate(0,-200,0);
+    translate(0,-150,0);
     fill(255,255,255);
     
     //noFill();

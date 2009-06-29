@@ -54,7 +54,6 @@ void setup() {
   frameRate(15);
  
   vehicle = new body();
-  vehicle.vel.x += 10;
   cam = new body();
   
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
@@ -86,28 +85,28 @@ void keyPressed() {
  //if (keyPressed) {
    
     if (key == 'a') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(1,0,0));
+       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(1,0,0));
        cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
        println(cam.offsetVel.x);
     }
     if (key == 'd') {
-        Vec3D dir = rotateAxis(cam.rot, new Vec3D(-1,0,0));
+        Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(-1,0,0));
        cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }
     if (key == 'q') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,1,0));
+       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,1,0));
        cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }
     if (key == 'z') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,-1,0));
+       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,-1,0));
        cam.offsetVel = cam.offsetVel.add(dir.scale(10) ); 
     }
     if (key == 'w') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
+       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,0,1));
        cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }
     if (key == 's') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
+       Vec3D dir = rotateAxisInv(cam.rot, new Vec3D(0,0,-1));
        cam.offsetVel = cam.offsetVel.add(dir.scale(10) );
     }    
     if (key == 'e') {
@@ -118,37 +117,49 @@ void keyPressed() {
       cam.pos.z = decrease(cam.vel.z);
       //println(cam.offset.z);
     }
+    
+    if (key == 'b') {
+      Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(0,1,0));
+      vehicle.vel = vehicle.vel.add(dir.scale( 13+ random(13.0)) );
+      println(vehicle.vel.x + ", " + vehicle.vel.y + ", " + vehicle.vel.z);    
+    }
 //}
 }
 
 void handleMouse() {
-        if (mousePressed) {
-    /*
-    println("start " + cam.rot.toArray()[0] + " " + 
-            cam.rot.toArray()[1] + " " + 
-            cam.rot.toArray()[2] + " " +
-            cam.rot.toArray()[3]  );*/
-    
-    //cam.rot = cam.rot.normalize();  
-    /// the ordering is xyzw, not wxyz
-     
+  if (mousePressed) {
     float dx = (mouseX - oldMouseX)/500.0;
-    float dy = (mouseY - oldMouseY)/500.0;
+    float dy = (mouseY - oldMouseY)/500.0;  
+   
+    if (mouseButton != CENTER ) {
+      /*
+      println("start " + cam.rot.toArray()[0] + " " + 
+              cam.rot.toArray()[1] + " " + 
+              cam.rot.toArray()[2] + " " +
+              cam.rot.toArray()[3]  );*/
+      
+      //cam.rot = cam.rot.normalize();  
+      /// the ordering is xyzw, not wxyz
+
+      Vec3D axis;
+      if (mouseButton == RIGHT) {
+        axis = new Vec3D(0,0,-1);
+        cam.rotateBody(dx, axis);
+      } else {
+        axis = new Vec3D(0,1,0);
+        cam.rotateAbs(-dx, axis);
+      }
+      
+      Vec3D y_axis = new Vec3D(-1,0,0);
+      //cam.rotateAbs(dy, y_axis);
+      cam.rotateBody(dy, y_axis);
+    }else {
     
-    Vec3D axis;
-    if (mouseButton == RIGHT) {
-      axis = new Vec3D(0,0,-1);
-      cam.rotateBody(dx, axis);
-    } else {
-      axis = new Vec3D(0,1,0);
-      cam.rotateAbs(-dx, axis);
-    }
-    
-    Vec3D y_axis = new Vec3D(-1,0,0);
-    //cam.rotateAbs(dy, y_axis);
-    cam.rotateBody(dy, y_axis);
-        }
-  
+     vehicle.pqr.y += dx;
+     vehicle.pqr.x += dy;
+  }
+  } 
+
   oldMouseX = mouseX;
   oldMouseY = mouseY;
 }
@@ -200,31 +211,42 @@ void draw() {
   
   //background(128);
   
-
-  translate(width/2,height/2); 
-  drawSky();
-  
-  pushMatrix();
-  //rotateZ(-PI/2);
-  
+  /////// update
+   
   cam.update();
   cam.vel = cam.vel.scale(0.8);
   cam.offsetVel = cam.offsetVel.scale(0.8);
   cam.pqr = cam.pqr.scale(0.8);
-  cam.apply();
-  
-  //drawGrid();
-  land.draw();
+ 
   
   //translate(cam.pos.x,cam.pos.y,cam.pos.z);
   
-  vehicle.pqr.x += 0.002*(noise(time)-0.5);
-  vehicle.pqr.y += 0.001*(noise(1000+time)-0.5);  
-  vehicle.pqr.z += 0.0011*(noise(2000+time)-0.5); 
-  //vehicle.vel.x += 0.09*(noise(2000+time)-0.5);
+//  vehicle.pqr.x += 0.008*(noise(time)-0.5);
+//  vehicle.pqr.y += 0.004*(noise(1000+time)-0.5);  
+//  vehicle.pqr.z += 0.0021*(noise(2000+time)-0.5); 
+  
+  vehicle.vel = vehicle.vel.scale(0.8);
+       vehicle.pqr.x *= 0.9;
+      vehicle.pqr.y *= 0.9;
+      vehicle.pqr.z *= 0.9; 
+      
   
   vehicle.update();
   //println(vehicle.vel.x + ", " +vehicle.pos.x);
+  /////////////////////////////////////////
+  /// draw
+  
+  pushMatrix();
+  translate(width/2,height/2); 
+  drawSky();
+  
+  /// the camera needs an applyInverse()
+   cam.apply();
+   //drawGrid();
+  land.draw();
+
+  //rotateZ(-PI/2);
+ 
   vehicle.draw();
   
   popMatrix();

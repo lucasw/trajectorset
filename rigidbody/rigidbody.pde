@@ -175,14 +175,102 @@ void handleMouse() {
   oldMouseY = mouseY;
 }
 
+float clamp(float a, float b, float c) { 
+	   return (a < b ? b : (a > c ? c : a)); 
+} 
+    
+void drawGround() {
+  float r = terrain.EARTH_CIRC_EQ;
+  
+  noStroke();
+ //stroke(255,0,0);
+ 
+  int maxInd = 64;
+  pushMatrix();
+   translate(-0, -1.00001*r, 0);
+   //translate(-0, -1.1*r, 0);
+   rotateX(-PI/2);
+  for (int i = 0; i < maxInd; i++) {
+      beginShape(TRIANGLE_STRIP); 
+      float f1 = (float)i/(float)maxInd;
+      float f2 = (float)(i+1)/(float)maxInd;
+       float psi = f1*PI/8 + 3*PI/8;
+       float psi2= f2*PI/8 + 3*PI/8;
+     
+       for (int j = 0; j <= maxInd; j++) {  
+            float cdiv = 10.0; 
+
+            float y = (j==maxInd)?0:j;
+    
+           color col1 = color(10,80*noise(i/cdiv+1000,y/cdiv+1000),200+55*noise(i/cdiv,y/cdiv)) ;
+           color col2 = color(0,80*noise((i+1)/cdiv+1000,y/cdiv+1000),200+55*noise((i+1)/cdiv,y/cdiv));
+           if (i+1 == maxInd) {
+             col2 = color(0,80*noise(1000,0/cdiv+1000),200+55*noise(0,0/cdiv));
+           }
+           
+         float theta = (float)j/(float)maxInd*2*PI;
+          fill(col1);
+          vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
+          fill(col2);
+          vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
+        }
+      
+       endShape(); 
+    }
+  popMatrix();
+ 
+  hint(DISABLE_DEPTH_TEST);
+  hint(ENABLE_DEPTH_TEST);
+}
+
 void  drawSky() {
   background(0);
   noStroke();
+  
+  float h = clamp(-cam.pos.y/30e3,0,1);
+  
+    pushMatrix();
+    
+    translate(-cam.pos.x, -cam.pos.y, -cam.pos.z);
+    
+    noStroke();
+    //stroke(255,255,50);
 
+    rotateX(-PI/2);
+    
+    float r = 1000.0;
+    int maxInd = 24;
+    
+    for (int i = 0; i < maxInd; i++) {
+      beginShape(QUAD_STRIP); 
+      float f1 = (float)i/(float)maxInd;
+      float f2 = (float)(i+1)/(float)maxInd;
+       float psi = f1*PI-PI/2;
+       float psi2= f2*PI-PI/2;
+       
+       color top = lerpColor(color(20,20,255), color(0,0,0), h );
+      
+       for (int j = 0; j <= maxInd; j++) {  
+         float theta = (float)j/(float)maxInd*2*PI;
+          fill(lerpColor(color(255,255,255),top, (f1 > 0.5) ? (f1-0.5)*2 : 0 ));
+          vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
+          fill(lerpColor(color(255,255,255),top, (f2 > 0.5) ? (f2-0.5)*2 : 0 ));
+          vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
+        }
+      
+       endShape(); 
+    }
+    // vertex( 10,  10, 0, 100, 100);
+    // vertex(-10,  10, 0, 0,   100);
+
+  
+    popMatrix(); 
+  /*
   beginShape();
-  fill(20,20,255);
+  fill(lerpColor( color(20,20,255), color(0,0,0), clamp(-cam.pos.y/30e3,0,1) ));
+  println("z " + cam.pos.y);
   vertex(-width/2, -height/2);
-  fill(20,20,255);
+  fill(lerpColor( color(20,20,255), color(0,0,0), clamp(-cam.pos.y/30e3,0,1) ));
   vertex( width/2, -height/2);  
   fill(255,255,255);
   vertex( width/2,  0);  
@@ -200,8 +288,13 @@ void  drawSky() {
   vertex( width/2,  height/2);  
   fill(255,255,255);
   vertex(-width/2,  height/2);  
+  
+  
       
   endShape();
+  */
+  
+  
     hint(DISABLE_DEPTH_TEST);
   hint(ENABLE_DEPTH_TEST);
   
@@ -249,11 +342,13 @@ void draw() {
   
   pushMatrix();
   translate(width/2,height/2); 
-  drawSky();
+
   
   /// the camera needs an applyInverse()
    cam.applyInv();
-   drawGrid();
+     drawSky();
+     drawGround();
+    drawGrid();
   //land.draw();
 
   //rotateZ(-PI/2);

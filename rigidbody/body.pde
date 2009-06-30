@@ -217,6 +217,7 @@ class movable {
   
   /// move the movable with another movable
   boolean posTracking = false;
+  boolean posAttTracking = false;
   /// point the movable at another movable
   boolean aimTracking = false;
   movable target;
@@ -283,6 +284,7 @@ class movable {
                  0, 1, 0, (float)pos.y,  
                  0, 0, 1, (float)pos.z,  
                  0, 0, 0, 1  ); 
+                 
                    
     Matrix4x4 m = rot.getMatrix();
     if (aimTracking) m = offsetRot.getMatrix();  
@@ -314,6 +316,13 @@ class movable {
                  (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
                  (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
                  (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  ); 
+    
+    if (posTracking) {
+          applyMatrix( 1, 0, 0, (float)-target.pos.x,  
+                 0, 1, 0, (float)-target.pos.y,  
+                 0, 0, 1, (float)-target.pos.z,  
+                 0, 0, 0, 1  ); 
+    }
     
     applyMatrix( 1, 0, 0, (float)pos.x,  
                  0, 1, 0, (float)pos.y,  

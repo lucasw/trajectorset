@@ -5,6 +5,82 @@ June 2009
 
 */
 
+Quaternion matrixToQuat(Matrix4x4 m) {
+   //m = m.transpose();
+   float s= sqrt(1 + (float)
+                   (m.matrix[0][0] + 
+                    m.matrix[1][1] +
+                    m.matrix[2][2])) * 2;
+                   
+   float qx = (float)(m.matrix[2][1] - m.matrix[1][2])/s;
+   float qy = (float)(m.matrix[0][2] - m.matrix[2][0])/s;
+   float qz = (float)(m.matrix[1][0] - m.matrix[0][1])/s;
+   
+   return new Quaternion(s/4, new Vec3D(qx,qy,qz) ).getNormalized();
+}
+
+void receive( byte[] data, String ip, int port ) {	// <-- extended handler
+  
+  float[] rxx = new float[data.length/4];
+  for (int i = 0; i < data.length; i += 4) {
+    int accum = ((data[i+3]&0xff) << 24) | 
+                ((data[i+2]&0xff) << 16) | 
+                ((data[i+1]&0xff) << 8) | 
+                 (data[i+0]&0xff);
+      
+      //int accum = ((b[i]&0xff <<24) | (b[i+1]<<16) | (b[i+2]<<8) | b[i+3];
+    
+    rxx[i/4] = Float.intBitsToFloat(accum);
+  }
+  
+  if (rxx.length <7) {
+    println("not enough data (only " + data.length + " bytes) from " + ip);
+    return;
+  }
+  
+  vehicle.rxUdp = true;
+  vehicle.pos.x = rxx[0];
+  vehicle.pos.y = rxx[1];
+  vehicle.pos.z = rxx[2];
+  vehicle.rot = new Quaternion(rxx[3], new Vec3D(rxx[4],rxx[5],rxx[6]));
+  //String message = new String( data );
+  
+  // print the result
+  //println( "receive: \""+message+"\" from "+ip+" on port "+port );
+}
+
+Quaternion updateRot(Quaternion oldRot, Vec3D curPqr) {
+    
+    float[] pqrMat  =  {0,     -curPqr.x, -curPqr.y,  -curPqr.z,
+                        curPqr.x,  0,      curPqr.z,  -curPqr.y,
+                        curPqr.y, -curPqr.z,  0,       curPqr.x,
+                        curPqr.z,  curPqr.y, -curPqr.x,  -0};
+     
+    float[] rf;
+   
+    rf = oldRot.toArray();              
+    float epsilon = 1 - (rf[0]*rf[0] + rf[1]*rf[1] + rf[2]*rf[2] + rf[3]*rf[3]);
+    float k = 0.01;
+    
+    //add rot Quaternion qdot 
+    //rf = rot.toArray();
+    //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
+    
+    Quaternion qdot = MatMultQuat(pqrMat,oldRot);
+    //rot = rot.add(  );//.scale(0.5) ); //.add(rot.scale(k*epsilon)) );
+    // add is buggy or doesn't do what I think it should
+    // so far the only quat operation worthwhile is multiply
+    
+    float[] qdf = qdot.toArray();
+    
+    Quaternion newRot = new Quaternion(qdf[3] + rf[3], new Vec3D(0.5*qdf[0] + rf[0], 0.5*qdf[1] + rf[1],0.5*qdf[2] + rf[2]  ));
+    newRot = newRot.normalize();
+    //rf = rot.toArray();
+    //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
+    
+    return newRot;
+  }
+  
 Vec3D rotateAxis(Quaternion rot, Vec3D ax) {
       Matrix4x4 m = rot.getMatrix();  
       Vec3D rax = new Vec3D(
@@ -73,6 +149,7 @@ Quaternion pointQuat(Vec3D aim) {
      
      right.x,  right.y,  right.z, 0,
      -up.x,     -up.y,     -up.z,    0,
+   //   up.x,     up.y,     up.z,    0,
      aim.x,    aim.y,    aim.z,   0,
      0,        0,        0,       1  
    );
@@ -89,18 +166,8 @@ Quaternion pointQuat(Vec3D aim) {
       println();
     }
   }
-  
-   //m = m.transpose();
-   float s= sqrt(1 + (float)
-                   (m.matrix[0][0] + 
-                    m.matrix[1][1] +
-                    m.matrix[2][2])) * 2;
-                   
-   float qx = (float)(m.matrix[2][1] - m.matrix[1][2])/s;
-   float qy = (float)(m.matrix[0][2] - m.matrix[2][0])/s;
-   float qz = (float)(m.matrix[1][0] - m.matrix[0][1])/s;
    
-   Quaternion new_rot = new Quaternion(s/4, new Vec3D(qx,qy,qz) ).getNormalized();
+   Quaternion new_rot = matrixToQuat(m); 
   
    if (false) {
    println("rot new ");
@@ -142,6 +209,7 @@ class movable {
   Vec3D offsetVel;
   
   Quaternion rot;
+  Quaternion offsetRot;
   /// TBD what is the best representation of rotational
   // inertia?  Used to moment of inertia matrices.
   // see http://www.mathworks.com/access/helpdesk/help/toolbox/aeroblks/index.html?/access/helpdesk/help/toolbox/aeroblks/simplevariablemass6dofquaternion.html&http://www.google.com/search?client=firefox-a&rls=org.mozilla%3Aen-US%3Aofficial&channel=s&hl=en&q=quaternion+inertia&btnG=Google+Search
@@ -158,48 +226,25 @@ class movable {
      pos = new Vec3D(0,0,0);
      vel = new Vec3D(0,0,0);
      rot = new Quaternion(0,new Vec3D(1,0,0));
+     offsetRot = new Quaternion(0,new Vec3D(1,0,0));
      pqr = new Vec3D(0,0,0);
     
      offset = new Vec3D(0,0,0);
      offsetVel = new Vec3D(0,0,0);
   }
   
+  
+ 
   ///////////////////////////////////////////////////////
   void update() {
- 
-    float[] pqrMat  =  {0,     -pqr.x, -pqr.y,  -pqr.z,
-                        pqr.x,  0,      pqr.z,  -pqr.y,
-                        pqr.y, -pqr.z,  0,       pqr.x,
-                        pqr.z,  pqr.y, -pqr.x,  -0};
-     
-    float[] rf;
-   
-    rf  = rot.toArray();              
-    float epsilon = 1 - (rf[0]*rf[0] + rf[1]*rf[1] + rf[2]*rf[2] + rf[3]*rf[3]);
-    float k = 0.01;
-    
-    //add rot Quaternion qdot 
-    rf = rot.toArray();
-    //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
-    
-    Quaternion qdot = MatMultQuat(pqrMat,rot);
-    //rot = rot.add(  );//.scale(0.5) ); //.add(rot.scale(k*epsilon)) );
-    // add is buggy or doesn't do what I think it should
-    // so far the only quat operation worthwhile is multiply
-    
-    float[] qdf = qdot.toArray();
-    
-    rot = new Quaternion(qdf[3] + rf[3], new Vec3D(0.5*qdf[0] + rf[0], 0.5*qdf[1] + rf[1],0.5*qdf[2] + rf[2]  ));
-    rot = rot.normalize();
-    //rf = rot.toArray();
-    //println(rf[0] + ", " + rf[1] + ", " + rf[2] + ", " + rf[3] + ", ");
+    rot = updateRot(rot,pqr); 
     
     pos =  pos.add(vel);  
     offset = offset.add(offsetVel);
     
     ////////////////////////////////////
     if (aimTracking && (target != null)) { 
-      
+       
        /*
        println("rot");
       Matrix4x4 m2 = rot.getMatrix();
@@ -210,9 +255,24 @@ class movable {
         }
       println();
     }*/
-      rot = pointQuat(target.pos.getInverted().sub(pos).getNormalized());
-    }
-    
+     offsetRot = pointQuat(target.pos.getInverted().sub(pos).getNormalized());
+      
+      //offsetRot = updateRot(offsetRot,pqr);
+      
+      Matrix4x4 m1 = rot.getMatrix();
+      Matrix4x4 m2 = offsetRot.getMatrix();
+      
+      Matrix4x4 m = m2.multiply(m1);
+         
+      offsetRot = matrixToQuat(m);
+      
+      float angle = PI;
+      offsetRot = offsetRot.multiply(new Quaternion(cos(angle/2) , new Vec3D(0,0,sin(angle/2) ) ));
+      
+    } else {   
+      
+    }    
+     
   }
   ////////////////////////////////////
   
@@ -220,11 +280,12 @@ class movable {
   void apply() {
     
     applyMatrix( 1, 0, 0, (float)pos.x,  
-                   0, 1, 0, (float)pos.y,  
-                   0, 0, 1, (float)pos.z,  
-                   0, 0, 0, 1  ); 
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
                    
-    Matrix4x4 m = rot.getMatrix();  
+    Matrix4x4 m = rot.getMatrix();
+    if (aimTracking) m = offsetRot.getMatrix();  
     
     
     applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
@@ -247,6 +308,8 @@ class movable {
                  0, 0, 0, 1  );  
              
     Matrix4x4 m = rot.getMatrix();  
+    if (aimTracking) m = offsetRot.getMatrix(); 
+    
     applyMatrix( (float)m.matrix[0][0], (float)m.matrix[1][0], (float)m.matrix[2][0], 0,  
                  (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
                  (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
@@ -285,9 +348,9 @@ class movable {
  
     apply();
 
-    float len = 30;
+    float len = 60;
     float rad = 7;
-    drawArrow(len*1.5,  rad*1.5, color(200,255,230) );
+    drawArrow(len*2.5,  rad*1.5, color(100,105,255) );
       pushMatrix();
       applyMatrix( 0, 1, 0, 0,  
                    0, 0, 1, 0,  
@@ -328,7 +391,11 @@ class body extends movable {
   
   void update() {
     
-    super.update();
+    if (rxUdp) {
+      
+    } else {
+      super.update();
+    }
 //    
 //    /// gravity
 //   // vel.y -=   1.0;

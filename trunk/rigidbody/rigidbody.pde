@@ -1,3 +1,5 @@
+import hypermedia.net.*;
+
 import processing.opengl.*;
 
 /** 
@@ -13,6 +15,8 @@ body vehicle;
 movable cam;
 
 terrain land;
+
+UDP udp;
 
 void drawArrow(float len, float rad, color col ) {
   pushMatrix();
@@ -52,7 +56,10 @@ void drawArrow(float len, float rad, color col ) {
 void setup() {
   size(800,600,P3D); 
   frameRate(15);
- 
+  
+  udp = new UDP( this, 6100 );
+  udp.listen(true);
+  
   vehicle = new body();
   cam = new body();
   cam.target = vehicle;
@@ -123,8 +130,10 @@ void keyPressed() {
     if (key == 't') {
       cam.aimTracking = !cam.aimTracking;  
       if (cam.aimTracking) {
+         cam.rot = new Quaternion(-cos(PI/2), new Vec3D(0,0,sin(PI/2)));
          println("aiming ");
       } else {
+        cam.rot = cam.offsetRot;
          println(" not aiming"); 
       }
     }
@@ -194,8 +203,8 @@ void drawGround() {
       beginShape(TRIANGLE_STRIP); 
       float f1 = (float)i/(float)maxInd;
       float f2 = (float)(i+1)/(float)maxInd;
-       float psi = f1*PI/8 + 3*PI/8;
-       float psi2= f2*PI/8 + 3*PI/8;
+       float psi = f1*PI/64 + 31*PI/64;
+       float psi2= f2*PI/64 + 31*PI/64;
      
        for (int j = 0; j <= maxInd; j++) {  
             float cdiv = 10.0; 
@@ -209,9 +218,9 @@ void drawGround() {
            }
            
          float theta = (float)j/(float)maxInd*2*PI;
-          fill(col1);
+          fill(lerpColor(col1,color(255,255,255), 1-f1*f1));
           vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
-          fill(col2);
+          fill(lerpColor(col1,color(255,255,255), 1-f2*f2));
           vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
         }
       
@@ -245,18 +254,23 @@ void  drawSky() {
       beginShape(QUAD_STRIP); 
       float f1 = (float)i/(float)maxInd;
       float f2 = (float)(i+1)/(float)maxInd;
-       float psi = f1*PI-PI/2;
-       float psi2= f2*PI-PI/2;
+      float psi = f1*PI-PI/2;
+      float psi2= f2*PI-PI/2;
        
-       color top = lerpColor(color(20,20,255), color(0,0,0), h );
+      color top = lerpColor(color(20,20,255), color(0,0,0), h );
       
-       for (int j = 0; j <= maxInd; j++) {  
+      f1 = (f1 > 0.5) ? (f1-0.5)*2 : 0;
+      f2 = (f2 > 0.5) ? (f2-0.5)*2 : 0;
+      f1 *= f1;
+      f2 *= f2;
+      
+      for (int j = 0; j <= maxInd; j++) {  
          float theta = (float)j/(float)maxInd*2*PI;
-          fill(lerpColor(color(255,255,255),top, (f1 > 0.5) ? (f1-0.5)*2 : 0 ));
-          vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
-          fill(lerpColor(color(255,255,255),top, (f2 > 0.5) ? (f2-0.5)*2 : 0 ));
-          vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
-        }
+         fill(lerpColor( color(255,255,255), top,f1  ));
+         vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
+         fill(lerpColor(color(255,255,255),top,  f2 ));
+         vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
+      }
       
        endShape(); 
     }

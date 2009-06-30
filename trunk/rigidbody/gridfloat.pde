@@ -14,8 +14,8 @@ class terrain {
   float [] ys;
 
   /// in meters
-  final float EARTH_CIRC_EQ = 40075.02e3;
-  final float EARTH_CIRC_MER= 40007.86e3;
+  static final float EARTH_CIRC_EQ = 40075.02e3;
+  static final float EARTH_CIRC_MER= 40007.86e3;
   
   int ncols;
   int nrows;

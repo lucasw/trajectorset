@@ -1,5 +1,4 @@
 import hypermedia.net.*;
-
 import processing.opengl.*;
 
 /** 
@@ -127,11 +126,26 @@ void keyPressed() {
       //println(cam.offset.z);
     }
     
+    if (key == 'y') {
+      cam.posTracking = !cam.posTracking;
+      
+      if (cam.posTracking) {
+         cam.aimTracking = false; 
+         cam.pos = new Vec3D(0,0,500);
+         cam.rot = new Quaternion(0, new Vec3D(1,0,0));
+      } else {
+         if (cam.target != null)
+           cam.pos = cam.pos.sub(cam.target.pos);
+      }
+    }
+    
     if (key == 't') {
-      cam.aimTracking = !cam.aimTracking;  
+      cam.aimTracking = !cam.aimTracking;
+      
       if (cam.aimTracking) {
          cam.rot = new Quaternion(-cos(PI/2), new Vec3D(0,0,sin(PI/2)));
          println("aiming ");
+         cam.posTracking = false;
       } else {
         cam.rot = cam.offsetRot;
          println(" not aiming"); 
@@ -241,7 +255,9 @@ void  drawSky() {
     pushMatrix();
     
     translate(-cam.pos.x, -cam.pos.y, -cam.pos.z);
-    
+    if (cam.posTracking && (cam.target != null)) {
+      translate(cam.target.pos.x, cam.target.pos.y, cam.target.pos.z);         
+    }
     noStroke();
     //stroke(255,255,50);
 

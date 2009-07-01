@@ -45,7 +45,6 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   Quaternion udpRot = new Quaternion(rxx[3], new Vec3D(rxx[4],rxx[5],rxx[6]));
   udpRot = udpRot.multiply(new Quaternion(cos(PI/4), new Vec3D(0,0,sin(PI/4))) );
   Vec3D udpVel = new Vec3D(rxx[9]*0.3048, rxx[7]*0.3048, rxx[8]*0.3048);
-  println(udpVel.x + " " + udpVel.y + " " + udpVel.z);
   
   vehicle.rxUdp = true;
   if (vehicle.initPos== null) {
@@ -211,9 +210,19 @@ Quaternion pointQuat(Vec3D aim) {
    
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////  
+////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////// 
+
 class movable {
   Vec3D pos;
   Vec3D vel;
+  
+  Vec3D[] posHistory;
+  int counter = 0;
+  int historyStart =0;
+  int historyEnd = 0;
+  int historySkip = 4;  // only update with every 4th new position
+  int historyMax = 200;
   
   /// udp stuff
   boolean rxUdp;
@@ -240,12 +249,16 @@ class movable {
   boolean aimTracking = false;
   movable target;
   
+  
   movable() {
     
      newPos = new Vec3D(0,0,0);
      newVel = new Vec3D(0,0,0);
      newRot = new Quaternion(0,new Vec3D(1,0,0));
      initPos = null;
+    
+     
+     posHistory = new Vec3D[historyMax];
     
      pos = new Vec3D(0,0,0);
      vel = new Vec3D(0,0,0);
@@ -306,6 +319,22 @@ class movable {
     
     }
      
+     
+     /// update history
+     
+     counter++;
+     
+     if (counter%historySkip == 0) {
+
+       posHistory[historyEnd] = pos;
+       
+       historyEnd += 1;
+       historyEnd %= historyMax;
+       if (historyEnd == historyStart) {
+          historyStart +=1;
+          historyStart %= historyMax; 
+       }
+     }
   }
   ////////////////////////////////////
   
@@ -363,6 +392,9 @@ class movable {
 
   }
   
+  
+
+  
   /////////////
    void rotateBody(float df,  Vec3D axis) {
 
@@ -382,19 +414,33 @@ class movable {
     rot = rot.multiply(quat);
    }
    
-
+  void drawHistory( ) {
+    pushMatrix();
+    noFill();
+    beginShape();
+    int tempHistoryEnd = (historyEnd < historyStart) ? historyEnd+historyMax : historyEnd;
+    
+    strokeWeight(4.0);
+    for (int i = historyStart; i < tempHistoryEnd && (i%historyMax < posHistory.length); i++ ) {
+      float frc = (float)(i-historyStart)/(float)(tempHistoryEnd - historyStart);
+      stroke(frc*255, frc*255,frc*frc*255,255*frc);  
+      int realInd = i%historyMax;
+      vertex( posHistory[realInd].x, posHistory[realInd].y, posHistory[realInd].z );  
+    }
+    
+    vertex( pos.x, pos.y, pos.z );  
+    
+    endShape();
+    popMatrix();
+  }
   
   void draw() {
 
- {
-    pushMatrix();
+  {
+    drawHistory();
     
-       applyMatrix( 1, 0, 0, (float)pos.x,  
-                 0, 1, 0, (float)pos.y,  
-                 0, 0, 1, (float)pos.z,  
-                 0, 0, 0, 1  ); 
-                 
-       float len = 60;
+    pushMatrix();
+   float len = 60;
     float rad = 3;
     drawArrow(vel.x/100.0,  rad, color(100,105,155) );
       pushMatrix();

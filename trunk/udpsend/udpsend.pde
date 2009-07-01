@@ -12,21 +12,39 @@ void setup() {
 
 float t;
 
+float x = 0;
+float y = 0;
+float z = 0;
+float vx = 0;
+float vy = 0;
+float vz = 0;
+
 void draw() {
   
   t += 0.001;
   
   
-  float[] tx = new float[7];
+  vx += 100*(0.2+sin(t/100.0*PI)) + 50*(noise(t)-0.49);
+  vy += 1.0*noise(t+1000);
+  vz += 15.0*(noise(t+2000)-0.5);  
+  x += vx/100.0;
+  y += vy/100.0;
+  z += vz/100.0;
   
-  tx[1] = 1000*sin(t*PI);
-  tx[2] = 10*sin(t*PI*10);
-  tx[0] = t;
+  float[] tx = new float[10];
   
-  tx[3] = 0;
+  tx[0] = x;
+  tx[1] = y;
+  tx[2] = z;
+  
+  tx[3] = noise(100 + t*3.0);
   tx[4] = 0.0;
-  tx[5] = 1.0;
+  tx[5] = sqrt(1.0 - tx[3]*tx[3]);
   tx[6] = 0;
+  
+  tx[7] = vx;
+  tx[8] = vy;
+  tx[9] = vz;
   
   byte[] txb = new byte[tx.length*4];
   

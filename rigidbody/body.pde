@@ -420,9 +420,10 @@ class movable {
     beginShape();
     int tempHistoryEnd = (historyEnd < historyStart) ? historyEnd+historyMax : historyEnd;
     
-    strokeWeight(4.0);
+   
     for (int i = historyStart; i < tempHistoryEnd && (i%historyMax < posHistory.length); i++ ) {
       float frc = (float)(i-historyStart)/(float)(tempHistoryEnd - historyStart);
+       strokeWeight(2.0+(1.0-frc)*10.0);
       stroke(frc*255, frc*255,frc*frc*255,255*frc);  
       int realInd = i%historyMax;
       vertex( posHistory[realInd].x, posHistory[realInd].y, posHistory[realInd].z );  

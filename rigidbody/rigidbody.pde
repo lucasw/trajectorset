@@ -16,6 +16,8 @@ movable cam;
 terrain land;
 
 float fov = PI/2;
+float autoFov = 1.0;
+boolean useAutoFov = true;
 
 UDP udp;
 
@@ -138,6 +140,10 @@ void keyPressed() {
       cam.toggleAimTracking();
     }
     
+    if (key == 'p') {
+       useAutoFov = !useAutoFov; 
+    }
+    
     if (key == 'm') {
       fov *= 1.02; 
       
@@ -148,8 +154,6 @@ void keyPressed() {
       fov *= 0.98;
       println("fov " + fov*180.0/PI); 
     }
-    
- 
     
     if (key == 'b') {
       Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(1,0,0));
@@ -327,8 +331,8 @@ void  drawSky() {
   */
   
   
-    hint(DISABLE_DEPTH_TEST);
-  hint(ENABLE_DEPTH_TEST);
+hint(DISABLE_DEPTH_TEST);
+hint(ENABLE_DEPTH_TEST);
   
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -338,8 +342,9 @@ float oldMouseX = 0;
 float oldMouseY = 0;
 
 void draw() {
-  perspective(fov, float(width)/float(height), 
-            1, 1e7);
+  float tempFov = fov;
+  if (cam.aimTracking && useAutoFov) tempFov*=autoFov;
+  perspective(tempFov, float(width)/float(height), 1, 1e7);
 
 
   handleMouse();

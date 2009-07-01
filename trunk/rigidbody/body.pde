@@ -154,6 +154,14 @@ Quaternion pointQuat(Vec3D aim) {
    Vec3D up = right.cross(aim);
    up = up.getNormalized();
    
+    if (right.magnitude() < 0.5) {
+  
+     //aim = new Vec3D(0,0,1);
+     right = new Vec3D(0,0,1);
+     up    = new Vec3D(-1,0,0);
+     aim   = new Vec3D(0,1,0);
+   }
+   
    Matrix4x4 m = new Matrix4x4(
      
      right.x,  right.y,  right.z, 0,
@@ -249,6 +257,35 @@ class movable {
   boolean aimTracking = false;
   movable target;
   
+  void togglePosTracking() {
+    posTracking = !posTracking;
+      
+      if (posTracking) {
+         println("pos tracking");
+         if (aimTracking) toggleAimTracking();
+         pos = new Vec3D(0,0,0);
+         rot = new Quaternion(0, new Vec3D(1,0,0));
+      } else {
+         println("not posTracking");
+         if (target != null)
+           pos = pos.sub(target.pos);
+      }
+  }
+  
+  void toggleAimTracking() {
+    aimTracking = !aimTracking;
+      
+      if (aimTracking) {
+         if (posTracking) { togglePosTracking(); }
+         
+         rot = new Quaternion(-cos(PI/2), new Vec3D(0,0,sin(PI/2)));
+         println("aiming ");
+
+      } else {
+         rot = offsetRot;
+         println("not aiming"); 
+      }
+  }
   
   movable() {
     
@@ -299,6 +336,7 @@ class movable {
         }
       println();
     }*/
+
      offsetRot = pointQuat(target.pos.getInverted().sub(pos).getNormalized());
       
       //offsetRot = updateRot(offsetRot,pqr);

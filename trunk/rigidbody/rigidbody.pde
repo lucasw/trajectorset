@@ -15,6 +15,8 @@ movable cam;
 
 terrain land;
 
+float fov = PI/2;
+
 UDP udp;
 
 void drawArrow(float len, float rad, color col ) {
@@ -62,8 +64,8 @@ void setup() {
   vehicle = new body();
   cam = new movable();
   cam.target = vehicle;
-  cam.posTracking = true;
-  cam.pos = new Vec3D(0,0,0);
+  cam.posTracking = false;
+  cam.pos = new Vec3D(0,-10,0);
   cam.offset = new Vec3D(0,0,0);
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
   land = new terrain("78184666", "78184666.png");
@@ -129,32 +131,25 @@ void keyPressed() {
     }
     
     if (key == 'y') {
-      cam.posTracking = !cam.posTracking;
-      
-      if (cam.posTracking) {
-         println("pos tracking");
-         cam.aimTracking = false; 
-         cam.pos = new Vec3D(0,0,500);
-         cam.rot = new Quaternion(0, new Vec3D(1,0,0));
-      } else {
-         println("not posTracking");
-         if (cam.target != null)
-           cam.pos = cam.pos.sub(cam.target.pos);
-      }
+      cam.togglePosTracking();
     }
     
     if (key == 't') {
-      cam.aimTracking = !cam.aimTracking;
-      
-      if (cam.aimTracking) {
-         cam.rot = new Quaternion(-cos(PI/2), new Vec3D(0,0,sin(PI/2)));
-         println("aiming ");
-         cam.posTracking = false;
-      } else {
-        cam.rot = cam.offsetRot;
-         println(" not aiming"); 
-      }
+      cam.toggleAimTracking();
     }
+    
+    if (key == 'm') {
+      fov *= 1.02; 
+      
+      if (fov > PI) fov = PI;
+      println("fov " + fov*180.0/PI); 
+    }
+    if (key == 'n') {
+      fov *= 0.98;
+      println("fov " + fov*180.0/PI); 
+    }
+    
+ 
     
     if (key == 'b') {
       Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(1,0,0));
@@ -343,7 +338,10 @@ float oldMouseX = 0;
 float oldMouseY = 0;
 
 void draw() {
-  
+  perspective(fov, float(width)/float(height), 
+            1, 1e7);
+
+
   handleMouse();
  
   

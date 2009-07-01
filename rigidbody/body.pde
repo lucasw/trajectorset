@@ -16,9 +16,11 @@ Quaternion matrixToQuat(Matrix4x4 m) {
    float qy = (float)(m.matrix[0][2] - m.matrix[2][0])/s;
    float qz = (float)(m.matrix[1][0] - m.matrix[0][1])/s;
    
-   return new Quaternion(s/4, new Vec3D(qx,qy,qz) ).getNormalized();
+   Quaternion rawQuat = new Quaternion(s/4, new Vec3D(qx,qy,qz) ).getNormalized();
+   return rawQuat;
 }
 
+/////////////////////////////////////////
 void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   
   float[] rxx = new float[data.length/4];
@@ -33,22 +35,30 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
     rxx[i/4] = Float.intBitsToFloat(accum);
   }
   
-  if (rxx.length <7) {
+  if (rxx.length <10) {
     println("not enough data (only " + data.length + " bytes) from " + ip);
     return;
   }
   
-  vehicle.rxUdp = true;
-  vehicle.pos.x = rxx[0];
-  vehicle.pos.y = rxx[1];
-  vehicle.pos.z = rxx[2];
-  vehicle.rot = new Quaternion(rxx[3], new Vec3D(rxx[4],rxx[5],rxx[6]));
-  //String message = new String( data );
+ 
+  Vec3D udpPos = new Vec3D(rxx[2]*0.3048, rxx[0]*0.3048, rxx[1]*0.3048);
+  Quaternion udpRot = new Quaternion(rxx[3], new Vec3D(rxx[4],rxx[5],rxx[6]));
+  udpRot = udpRot.multiply(new Quaternion(cos(PI/4), new Vec3D(0,0,sin(PI/4))) );
+  Vec3D udpVel = new Vec3D(rxx[9]*0.3048, rxx[7]*0.3048, rxx[8]*0.3048);
+  println(udpVel.x + " " + udpVel.y + " " + udpVel.z);
   
-  // print the result
-  //println( "receive: \""+message+"\" from "+ip+" on port "+port );
+  vehicle.rxUdp = true;
+  if (vehicle.initPos== null) {
+    vehicle.initPos = udpPos;
+  }
+  vehicle.newPos = udpPos.sub(vehicle.initPos);
+  vehicle.newRot = udpRot;
+  vehicle.newVel = udpVel;
+  
+ 
 }
 
+////////////////////////////////////
 Quaternion updateRot(Quaternion oldRot, Vec3D curPqr) {
     
     float[] pqrMat  =  {0,     -curPqr.x, -curPqr.y,  -curPqr.z,
@@ -205,6 +215,14 @@ class movable {
   Vec3D pos;
   Vec3D vel;
   
+  /// udp stuff
+  boolean rxUdp;
+  Vec3D newPos;
+  Vec3D newVel;
+  Quaternion newRot;
+  /// subtract out the very first position received
+  Vec3D initPos;
+  
   Vec3D offset;
   Vec3D offsetVel;
   
@@ -224,6 +242,11 @@ class movable {
   
   movable() {
     
+     newPos = new Vec3D(0,0,0);
+     newVel = new Vec3D(0,0,0);
+     newRot = new Quaternion(0,new Vec3D(1,0,0));
+     initPos = null;
+    
      pos = new Vec3D(0,0,0);
      vel = new Vec3D(0,0,0);
      rot = new Quaternion(0,new Vec3D(1,0,0));
@@ -238,6 +261,13 @@ class movable {
  
   ///////////////////////////////////////////////////////
   void update() {
+    
+    if (rxUdp) {
+      pos = newPos;
+      vel = newVel;
+      rot = newRot; 
+    } else {
+      
     rot = updateRot(rot,pqr); 
     
     pos =  pos.add(vel);  
@@ -273,6 +303,8 @@ class movable {
     } else {   
       
     }    
+    
+    }
      
   }
   ////////////////////////////////////
@@ -353,6 +385,37 @@ class movable {
 
   
   void draw() {
+
+ {
+    pushMatrix();
+    
+       applyMatrix( 1, 0, 0, (float)pos.x,  
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+                 
+       float len = 60;
+    float rad = 3;
+    drawArrow(vel.x/100.0,  rad, color(100,105,155) );
+      pushMatrix();
+      applyMatrix( 0, 1, 0, 0,  
+                   0, 0, 1, 0,  
+                   1, 0, 0, 0,
+                   0, 0, 0, 1  ); 
+      drawArrow(vel.z/100.0, rad, color(100,155,0));
+      popMatrix();
+      pushMatrix();
+       applyMatrix( 0, 1, 0, 0,  
+                    1, 0, 0, 0,  
+                    0, 0, 1, 0,
+                    0, 0, 0, 1  ); 
+      drawArrow(vel.y/100.0, rad, color(155,100,0));
+      popMatrix();
+      
+    popMatrix();
+  }
+    
+    if (true) {
     pushMatrix();
  
     apply();
@@ -377,12 +440,13 @@ class movable {
 
 
     popMatrix();
+    }
   }
 };
 
 class body extends movable {
 
-  boolean rxUdp;
+
   
   /// looking at own ancient code from
   /// http://icculus.org/~lucasw/Dynamics/volume-src-limited-0.0.12.tgz
@@ -393,18 +457,12 @@ class body extends movable {
   body() {
    
      force = new Vec3D(0,0,0);
-     torque = new Vec3D(0,0,0);
-     
-     
+     torque = new Vec3D(0,0,0);   
   }
   
-  void update() {
+ /* void update() {
     
-    if (rxUdp) {
-      
-    } else {
-      super.update();
-    }
+
 //    
 //    /// gravity
 //   // vel.y -=   1.0;
@@ -417,10 +475,11 @@ class body extends movable {
 //      vel.x *= 0.5;
 //      vel.z *= 0.5;
 //    }
-  }
+  }*/
   
- /* void draw() {
+  /*void draw() {
 
+    super.draw();
   }*/
 };
 

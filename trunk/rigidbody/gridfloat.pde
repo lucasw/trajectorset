@@ -30,7 +30,7 @@ class terrain {
   Vec3D maxur, minll;
  
   float hToY(int h) {
-     return ((h - nrows/2)*dy);
+     return ((-h + nrows/2)*dy);
   }
   
   float wToX(int w) {   
@@ -52,10 +52,10 @@ class terrain {
   
   /// path to hdr and flt files
   /// download some data from seamless.usgs.gov in gridfloat format
-  terrain(String filepath) {
+  terrain(String filepath, String imagePath) {
     
     /// png converted from geotiffs
-    tex = loadImage(filepath + ".png");
+    tex = loadImage(imagePath);
     
     String lines[] = loadStrings(filepath + ".hdr");
 
@@ -139,7 +139,7 @@ class terrain {
     directionalLight(255,255,210,-0.6,-1,0);
     directionalLight(30,45,30,-0.2,1,0);
   
-    translate(0,-150,0);
+    translate(0,-(heights[(int)(nrows/2)][(int)(ncols/2)]),0);
     fill(255,255,255);
     
     //noFill();

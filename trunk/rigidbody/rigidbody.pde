@@ -60,12 +60,14 @@ void setup() {
   udp.listen(true);
   
   vehicle = new body();
-  cam = new body();
+  cam = new movable();
   cam.target = vehicle;
-  cam.pos = new Vec3D(300,300,800);
-   cam.offset = new Vec3D(0,0,520);
+  cam.posTracking = true;
+  cam.pos = new Vec3D(0,0,0);
+  cam.offset = new Vec3D(0,0,0);
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
-  //land = new terrain("78184666");
+  land = new terrain("78184666", "78184666.png");
+   //land = new terrain("54112044","28660617.jpg");
 }
 
 //////////////////////////////////////////////////////
@@ -130,10 +132,12 @@ void keyPressed() {
       cam.posTracking = !cam.posTracking;
       
       if (cam.posTracking) {
+         println("pos tracking");
          cam.aimTracking = false; 
          cam.pos = new Vec3D(0,0,500);
          cam.rot = new Quaternion(0, new Vec3D(1,0,0));
       } else {
+         println("not posTracking");
          if (cam.target != null)
            cam.pos = cam.pos.sub(cam.target.pos);
       }
@@ -221,20 +225,23 @@ void drawGround() {
        float psi2= f2*PI/64 + 31*PI/64;
      
        for (int j = 0; j <= maxInd; j++) {  
-            float cdiv = 10.0; 
-
+            float cdiv1 = 10.0*(psi/(PI/2)); 
+            float cdiv2 = 10.0*(psi2/(PI/2));  
+            
             float y = (j==maxInd)?0:j;
     
-           color col1 = color(10,80*noise(i/cdiv+1000,y/cdiv+1000),200+55*noise(i/cdiv,y/cdiv)) ;
-           color col2 = color(0,80*noise((i+1)/cdiv+1000,y/cdiv+1000),200+55*noise((i+1)/cdiv,y/cdiv));
-           if (i+1 == maxInd) {
-             col2 = color(0,80*noise(1000,0/cdiv+1000),200+55*noise(0,0/cdiv));
-           }
+          float nval1 = noise(    i/cdiv1+1000,  y/cdiv1+1000);
+          float nval2 = noise((i+1)/cdiv2+1000,  y/cdiv2+1000);
+          float nval3 = noise(    i/cdiv1,       y/cdiv1);
+          float nval4 = noise((i+1)/cdiv2,       y/cdiv2);
+    
+          color col1 = color(10,80*nval1,  200+55*nval3);
+          color col2 = color(0, 80*nval2,  200+55*nval4);
            
-         float theta = (float)j/(float)maxInd*2*PI;
-          fill(lerpColor(col1,color(255,255,255), 1-f1*f1));
+          float theta = (float)j/(float)maxInd*2*PI;
+          fill(lerpColor(col1, color(255,255,255), 1-f1*f1));
           vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
-          fill(lerpColor(col1,color(255,255,255), 1-f2*f2));
+          fill(lerpColor(col2, color(255,255,255), 1-f2*f2));
           vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
         }
       
@@ -275,16 +282,16 @@ void  drawSky() {
        
       color top = lerpColor(color(20,20,255), color(0,0,0), h );
       
-      f1 = (f1 > 0.5) ? (f1-0.5)*2 : 0;
-      f2 = (f2 > 0.5) ? (f2-0.5)*2 : 0;
-      f1 *= f1;
-      f2 *= f2;
+//      f1 = (f1 > 0.5) ? (f1-0.5)*2 : 0;
+//      f2 = (f2 > 0.5) ? (f2-0.5)*2 : 0;
+//      f1 *= f1;
+//      f2 *= f2;
       
       for (int j = 0; j <= maxInd; j++) {  
          float theta = (float)j/(float)maxInd*2*PI;
-         fill(lerpColor( color(255,255,255), top,f1  ));
+         fill(lerpColor( color(255,255,255), top, f1 ));
          vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
-         fill(lerpColor(color(255,255,255),top,  f2 ));
+         fill(lerpColor( color(255,255,255), top, f2 ));
          vertex( r*cos(theta)*cos(psi2), r*sin(theta)*cos(psi2), r*sin(psi2));// (float)(j)/(float)maxInd*100.0, (float)(i+1)/(float)maxInd*100.0);
       }
       
@@ -347,10 +354,7 @@ void draw() {
   
   /////// update
    
-  cam.update();
-  cam.vel = cam.vel.scale(0.9);
-  cam.offsetVel = cam.offsetVel.scale(0.9);
-  cam.pqr = cam.pqr.scale(0.8);
+
  
   
   //translate(cam.pos.x,cam.pos.y,cam.pos.z);
@@ -367,6 +371,15 @@ void draw() {
   
   vehicle.update();
   //println(vehicle.vel.x + ", " +vehicle.pos.x);
+  
+  cam.update();
+  cam.vel = cam.vel.scale(0.9);
+  cam.offsetVel = cam.offsetVel.scale(0.9);
+  cam.pqr = cam.pqr.scale(0.8);
+  ///////////////////////////////////////////
+  // update
+  
+
   /////////////////////////////////////////
   /// draw
   
@@ -378,8 +391,8 @@ void draw() {
    cam.applyInv();
      drawSky();
      drawGround();
-    drawGrid();
-  //land.draw();
+    //drawGrid();
+  land.draw();
 
   //rotateZ(-PI/2);
  

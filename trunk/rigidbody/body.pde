@@ -326,6 +326,16 @@ class movable {
     ////////////////////////////////////
     if (aimTracking && (target != null)) { 
        
+      
+      Vec3D aim = target.pos.getInverted().sub(pos);
+      
+      float targetDistance = aim.magnitude();
+      
+      if (targetDistance > 1e3) {
+        autoFov = 1e3/targetDistance;
+      } else {
+        autoFov = 1.0; 
+      }
        /*
        println("rot");
       Matrix4x4 m2 = rot.getMatrix();
@@ -337,7 +347,7 @@ class movable {
       println();
     }*/
 
-     offsetRot = pointQuat(target.pos.getInverted().sub(pos).getNormalized());
+     offsetRot = pointQuat(aim.getNormalized());
       
       //offsetRot = updateRot(offsetRot,pqr);
       

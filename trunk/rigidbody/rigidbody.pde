@@ -1,14 +1,15 @@
-import hypermedia.net.*;
-import processing.opengl.*;
-
 /** 
 binarymillenium
 GPL v3.0
 June 2009
 
 */
-
+import hypermedia.net.*;
+import processing.opengl.*;
 import toxi.geom.*;
+
+
+PFont font;
 
 body vehicle; 
 movable cam;
@@ -59,6 +60,9 @@ void drawArrow(float len, float rad, color col ) {
 void setup() {
   size(800,600,P3D); 
   frameRate(15);
+  
+  font = loadFont("CourierNewPS-BoldMT-32.vlw");
+  textFont(font, 32);
   
   udp = new UDP( this, 6100 );
   udp.listen(true);
@@ -135,7 +139,9 @@ void keyPressed() {
     if (key == 'y') {
       cam.togglePosTracking();
     }
-    
+    if (key == 'u') {
+      cam.toggleAttTracking();
+    }
     if (key == 't') {
       cam.toggleAimTracking();
     }
@@ -158,7 +164,7 @@ void keyPressed() {
     if (key == 'b') {
       Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(1,0,0));
       vehicle.vel = vehicle.vel.add(dir.scale( 13+ random(13.0)) );
-      println(vehicle.vel.x + ", " + vehicle.vel.y + ", " + vehicle.vel.z);    
+      //println(vehicle.vel.x + ", " + vehicle.vel.y + ", " + vehicle.vel.z);    
     }
 //}
 }
@@ -191,9 +197,12 @@ void handleMouse() {
       cam.rotateAbs(-dy, y_axis);
       //cam.rotateBody(-dy, y_axis);
     } else {
-    
-       vehicle.pqr.y += dx;
-       vehicle.pqr.x += dy;
+        Vec3D axis = new Vec3D(0,1,0);
+        vehicle.rotateAbs(dy, axis);
+        axis = new Vec3D(0,0,1);
+        vehicle.rotateAbs(dx, axis);
+       //vehicle.pqr.y += dx;
+       //vehicle.pqr.x += dy;
      }
   } 
 
@@ -384,6 +393,10 @@ void draw() {
   
 
   /////////////////////////////////////////
+  
+
+  
+  
   /// draw
   
   pushMatrix();
@@ -401,6 +414,32 @@ void draw() {
  
   vehicle.draw();
   
+  popMatrix();
+  
+  
+    /// write text to screen
+  pushMatrix();
+  hint(DISABLE_DEPTH_TEST);
+  hint(ENABLE_DEPTH_TEST);
+  perspective(PI/2, float(width)/float(height), 1, 1e7);
+  //noStroke();
+  translate(-width/4,-height/4); 
+
+  stroke(128);
+  fill(0,0,0);
+  String sa;
+  sa = nfs(vehicle.pos.x,6,1);
+  text("X     " + sa, 0,  50);
+  sa = nfs(vehicle.pos.y,6,1);
+  text("Y     " + sa, 0,  80);
+  sa = nfs(vehicle.pos.z,6,1);
+  text("Z     " + sa, 0, 110);
+  sa = nfs(vehicle.vel.x,6,1);
+  text("dX/dt " + sa, 0, 140);
+  sa = nfs(vehicle.vel.y,6,1);
+  text("dY/dt " + sa, 0, 170);
+  sa = nfs(vehicle.vel.z,6,1);
+  text("dZ/dt " + sa, 0, 200);
   popMatrix();
 }
 

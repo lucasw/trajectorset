@@ -252,13 +252,20 @@ class movable {
   
   /// move the movable with another movable
   boolean posTracking = false;
-  boolean posAttTracking = false;
+  boolean attTracking = false;
   /// point the movable at another movable
   boolean aimTracking = false;
   movable target;
   
+  void toggleAttTracking() {
+    attTracking = !attTracking;
+    if (attTracking)
+      rot = new Quaternion(0, new Vec3D(1,0,0)); 
+  }
+  
   void togglePosTracking() {
     posTracking = !posTracking;
+    
       
       if (posTracking) {
          println("pos tracking");
@@ -417,6 +424,7 @@ class movable {
                  0, 1, 0, (float)offset.y,  
                  0, 0, 1, (float)offset.z,  
                  0, 0, 0, 1  );  
+    
              
     Matrix4x4 m = rot.getMatrix();  
     if (aimTracking) m = offsetRot.getMatrix(); 
@@ -425,6 +433,15 @@ class movable {
                  (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
                  (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
                  (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  ); 
+    
+    if (attTracking) {
+        rotateZ(PI/2);
+        m = target.rot.getMatrix(); 
+        applyMatrix( (float)m.matrix[0][0], (float)m.matrix[1][0], (float)m.matrix[2][0], 0,  
+                     (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
+                     (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
+                     (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  ); 
+    }
     
     if (posTracking) {
           applyMatrix( 1, 0, 0, (float)-target.pos.x,  

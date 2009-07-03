@@ -41,16 +41,19 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   }
   
  
-  Vec3D udpPos = new Vec3D(rxx[2]*0.3048, rxx[0]*0.3048, rxx[1]*0.3048);
-  Quaternion udpRot = new Quaternion(rxx[3], new Vec3D(rxx[4],rxx[5],rxx[6]));
-  udpRot = udpRot.multiply(new Quaternion(cos(PI/4), new Vec3D(0,0,sin(PI/4))) );
-  Vec3D udpVel = new Vec3D(rxx[9]*0.3048, rxx[7]*0.3048, rxx[8]*0.3048);
+  Vec3D udpPos = new Vec3D(rxx[1]*0.3048, rxx[0]*0.3048, rxx[2]*0.3048); 
+  // convert from righthanded UEN coordinates
+  Quaternion udpRot = new Quaternion(rxx[6], new Vec3D(rxx[3],-rxx[4],rxx[5]));
+  udpRot = udpRot.multiply(new Quaternion(cos(PI/4), new Vec3D(0,sin(PI/4),0)) ); 
+  udpRot = (new Quaternion(cos(-PI/4), new Vec3D(sin(-PI/4),0,0))).multiply(udpRot); 
+  
+  Vec3D udpVel = new Vec3D(rxx[8]*0.3048, rxx[7]*0.3048, rxx[9]*0.3048);
   
   vehicle.rxUdp = true;
   if (vehicle.initPos== null) {
     vehicle.initPos = udpPos;
   }
-  vehicle.newPos = udpPos.sub(vehicle.initPos);
+  vehicle.newPos = udpPos;
   vehicle.newRot = udpRot;
   vehicle.newVel = udpVel;
   
@@ -229,8 +232,8 @@ class movable {
   int counter = 0;
   int historyStart =0;
   int historyEnd = 0;
-  int historySkip = 4;  // only update with every 4th new position
-  int historyMax = 200;
+  int historySkip = 8;  // only update with every 4th new position
+  int historyMax = 1000;
   
   /// udp stuff
   boolean rxUdp;
@@ -506,22 +509,27 @@ class movable {
     drawHistory();
     
     pushMatrix();
-   float len = 60;
+    
+        applyMatrix( 1, 0, 0, (float)pos.x,  
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+
     float rad = 3;
-    drawArrow(vel.x/100.0,  rad, color(100,105,155) );
+    drawArrow(vel.x/10.0,  rad, color(100,105,155) );
       pushMatrix();
       applyMatrix( 0, 1, 0, 0,  
                    0, 0, 1, 0,  
                    1, 0, 0, 0,
                    0, 0, 0, 1  ); 
-      drawArrow(vel.z/100.0, rad, color(100,155,0));
+      drawArrow(vel.z/10.0, rad, color(100,155,0));
       popMatrix();
       pushMatrix();
        applyMatrix( 0, 1, 0, 0,  
                     1, 0, 0, 0,  
                     0, 0, 1, 0,
                     0, 0, 0, 1  ); 
-      drawArrow(vel.y/100.0, rad, color(155,100,0));
+      drawArrow(vel.y/10.0, rad, color(155,100,0));
       popMatrix();
       
     popMatrix();

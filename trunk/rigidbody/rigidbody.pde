@@ -11,6 +11,11 @@ import toxi.geom.*;
 
 PFont font;
 
+/// offline rendering
+boolean offline = false;
+
+boolean textHud = true;
+
 body vehicle; 
 movable cam;
 
@@ -68,14 +73,21 @@ void setup() {
   udp.listen(true);
   
   vehicle = new body();
+  vehicle.pos.x = 50;
+  vehicle.pos.y = 50;
+  vehicle.pos.z = 500;
+  
+  vehicle.rot = vehicle.rot.multiply(new Quaternion(cos(-PI/4),new Vec3D(0,0,sin(-PI/4))));
+  
   cam = new movable();
   cam.target = vehicle;
   cam.posTracking = false;
+  cam.togglePosTracking();
   cam.pos = new Vec3D(0,-10,0);
   cam.offset = new Vec3D(0,0,0);
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
   land = new terrain("78184666", "78184666.png");
-   //land = new terrain("54112044","28660617.jpg");
+  //land = new terrain("54112044","28660617.jpg");
 }
 
 //////////////////////////////////////////////////////
@@ -165,6 +177,10 @@ void keyPressed() {
       Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(1,0,0));
       vehicle.vel = vehicle.vel.add(dir.scale( 13+ random(13.0)) );
       //println(vehicle.vel.x + ", " + vehicle.vel.y + ", " + vehicle.vel.z);    
+    }
+    
+    if (key == 'h') {
+       textHud = !textHud; 
     }
 //}
 }
@@ -350,6 +366,8 @@ float time = 0;
 float oldMouseX = 0;
 float oldMouseY = 0;
 
+int counter = 0;
+
 void draw() {
   float tempFov = fov;
   if (cam.aimTracking && useAutoFov) tempFov*=autoFov;
@@ -365,20 +383,21 @@ void draw() {
   //background(128);
   
   /////// update
-   
 
- 
-  
   //translate(cam.pos.x,cam.pos.y,cam.pos.z);
   
-//  vehicle.pqr.x += 0.008*(noise(time)-0.5);
-//  vehicle.pqr.y += 0.004*(noise(1000+time)-0.5);  
-//  vehicle.pqr.z += 0.0021*(noise(2000+time)-0.5); 
+  if (offline) {
+  vehicle.pqr.x += 0.008*(noise(time)-0.5);
+  vehicle.pqr.y += 0.004*(noise(1000+time)-0.5);  
+  vehicle.pqr.z += 0.0021*(noise(2000+time)-0.5); 
+  Vec3D dir = rotateAxis(vehicle.rot, new Vec3D(1,0,0));
+  vehicle.vel = vehicle.vel.add(dir.scale( 13+ noise(counter/100.0)) );
+  }
   
-  vehicle.vel = vehicle.vel.scale(0.8);
-       vehicle.pqr.x *= 0.9;
-      vehicle.pqr.y *= 0.9;
-      vehicle.pqr.z *= 0.9; 
+  vehicle.vel = vehicle.vel.scale(0.95);
+  vehicle.pqr.x *= 0.9;
+  vehicle.pqr.y *= 0.9;
+  vehicle.pqr.z *= 0.9; 
       
   
   vehicle.update();
@@ -418,7 +437,10 @@ void draw() {
   
   
     /// write text to screen
-  pushMatrix();
+  
+  
+  if (textHud) {
+    pushMatrix();
   hint(DISABLE_DEPTH_TEST);
   hint(ENABLE_DEPTH_TEST);
   perspective(PI/2, float(width)/float(height), 1, 1e7);
@@ -428,19 +450,30 @@ void draw() {
   stroke(128);
   fill(0,0,0);
   String sa;
-  sa = nfs(vehicle.pos.x,6,1);
-  text("X     " + sa, 0,  50);
+  /// TBD handle arbitrary conversions like this x<->y better
   sa = nfs(vehicle.pos.y,6,1);
+  text("X     " + sa, 0,  50);
+  sa = nfs(vehicle.pos.x,6,1);
   text("Y     " + sa, 0,  80);
   sa = nfs(vehicle.pos.z,6,1);
   text("Z     " + sa, 0, 110);
-  sa = nfs(vehicle.vel.x,6,1);
-  text("dX/dt " + sa, 0, 140);
   sa = nfs(vehicle.vel.y,6,1);
+  text("dX/dt " + sa, 0, 140);
+  sa = nfs(vehicle.vel.x,6,1);
   text("dY/dt " + sa, 0, 170);
   sa = nfs(vehicle.vel.z,6,1);
   text("dZ/dt " + sa, 0, 200);
   popMatrix();
+  }
+  
+  if (offline) {
+    counter++;
+    if (counter > 200) {
+      exit(); 
+    }
+  
+    saveFrame("test-######.png");
+  }
 }
 
 

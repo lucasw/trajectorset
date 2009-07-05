@@ -20,6 +20,8 @@ GeomSphere bomb;
 boolean bombEnable = false;
 float bombSize = 150;
 
+final int NUM_BOXES = 10;
+
 int wd = 20;
 float spc = 60;
 float[] heights;
@@ -123,6 +125,21 @@ void draw() {
   
   // update stuff
   collision.collide(space);
+  
+  Contact contact = new Contact( collision.getContactIntBuffer(),
+        	collision.getContactFloatBuffer());
+  for (int i = 0; i < collision.getContactCount(); i++) {
+    contact.setIndex(i);
+    Geom geo1 = contact.getGeom1();
+    Geom geo2 = contact.getGeom2();
+    /// TBD getName crashes when there is no name
+    if ((geo1.getName().equals("bomb")) || (geo2.getName().equals("bomb"))) {
+      contact.setSoftErp(0);
+      contact.setSoftCfm(1);
+      //contact.ignoreContact();  // this works
+    }
+  }
+  
   collision.applyContacts();
   world.step();
   
@@ -133,12 +150,12 @@ void draw() {
   background(0);
   pushMatrix();
   //lights();
-  directionalLight(255,255,180,1,0.4,0 );
+ 
   ambientLight(20,20,20);
   translate(width/2,3*height/4+yoff,zoff);
   
   rotateY(angle);
-  
+   directionalLight(255,255,180,1,0.4,0 );
   if (bombEnable) {
    sphere(bombSize);
      space.remove(bomb);
@@ -254,20 +271,20 @@ void setupODE()
   collision = new JavaCollision(world);
   collision.setSurfaceMu(2000.0);
   
-  boxes= new Body[100];
+  boxes= new Body[NUM_BOXES];
   for (int i = 0; i <boxes.length; i++) {
     boxes[i] = new Body("box" + i,world, new GeomBox(10,10,10));        
     
-    float x = boxes.length/2*random(-1,1);
-    float y = -250 + random(-2*boxes.length,0);
-    float z = boxes.length/2*random(-1,1);
+    float x = (20+boxes.length)/2*random(-1,1);
+    float y = -50 + random(-2*boxes.length,0);
+    float z = (20+boxes.length)/2*random(-1,1);
     boxes[i].setPosition(x,y,z);
     boxes[i].setLinearVel(0,0,0);
   }
   
   
   
-  GeomPlane groundGeom = new GeomPlane(0, -1, 0, 0);        
+  GeomPlane groundGeom = new GeomPlane("plane",0, -1, 0, 0);        
   
 
   GeomTriMesh terrain = new GeomTriMesh(heights, heights.length/3);

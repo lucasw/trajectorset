@@ -16,6 +16,9 @@ Body[] boxes;
 World world;
 HashSpace space;
 JavaCollision collision;
+GeomSphere bomb;
+boolean bombEnable = false;
+float bombSize = 150;
 
 int wd = 20;
 float spc = 60;
@@ -30,7 +33,7 @@ void setup() {
 
   float offset = wd*spc/2;
   float hgt = 450;
-  float div1 = 40;
+  float div1 = 28;
   float div2 = 20;
   // noise produces repeatable values for same parameters over runtime of 
   // sketch
@@ -79,18 +82,20 @@ void setup() {
   
    setupODE();
    
+   bomb = new GeomSphere("bomb",bombSize);
    
 }
 
 float zoff;
-float yoff;
+float yoff=200;
+
 
 void draw() {
   if (keyPressed) {
-     if (key =='j') {
+     if (key =='a') {
        angle += PI/100.0;
      } 
-     if (key =='k') {
+     if (key =='d') {
        angle -= PI/99.0;
      } 
      
@@ -106,13 +111,23 @@ void draw() {
      if (key =='s') {
        zoff -= 9.0;
      } 
+     
+     if (key == 'b') {
+       println("bomb!");
+       bombEnable = true;
+       space.add(bomb);
+     }
   }
   
+ 
   
   // update stuff
   collision.collide(space);
   collision.applyContacts();
   world.step();
+  
+  
+ 
   
   /// draw
   background(0);
@@ -123,10 +138,16 @@ void draw() {
   translate(width/2,3*height/4+yoff,zoff);
   
   rotateY(angle);
+  
+  if (bombEnable) {
+   sphere(bombSize);
+     space.remove(bomb);
+    bombEnable = false; 
+  }
 
   //draw ground
   drawGrid();
-  drawGround();
+  //drawGround();
   
   /// draw boxes
   for (int i = 0; i <boxes.length; i++) {
@@ -254,7 +275,7 @@ void setupODE()
   
   space = new HashSpace();        
   space.add(groundGeom);
-  space.add(terrain);
+  //space.add(terrain);
   
   for (int i = 0; i <boxes.length; i++) {
     space.addBodyGeoms(boxes[i]);

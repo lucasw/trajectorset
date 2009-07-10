@@ -21,9 +21,8 @@ import org.odejava.collision.*;
 import org.odejava.ode.*;
 import javax.vecmath.*;
 
-
 float angle;
-Body[] boxes;
+
 World world;
 HashSpace space;
 JavaCollision collision;
@@ -32,7 +31,132 @@ boolean bombEnable = false;
 float bombSize = 150;
 JointGroup jointGroup;
 
-final int NUM_BOXES = 13;
+Body main;
+arm[] arms;
+
+class arm {
+  final int NUM_BOXES = 4;
+  Body[] boxes;
+  
+  float angle;
+  String[] names;
+  String[] boxNames;
+  
+  arm(float angle, Body main, float x, float y, float z) {
+    this.angle = angle;
+    boxes = new Body[NUM_BOXES];
+    names = new String[NUM_BOXES];
+    boxNames = new String[NUM_BOXES];
+    
+    float dx = 11;
+    float dy = 2;
+    float newx = 0;
+    float newy = 0;
+    
+    for (int i = 0; i <boxes.length; i++) { 
+      newx += dx;
+      newy += 0;//dy;
+      
+      float px = x + cos(angle)*newx + sin(angle)*newy;
+      float py = y;
+      float pz = z + cos(angle)*newy + sin(angle)*newx;
+      
+      float fr = (1.0 - 0.5*(float)i/(float)boxes.length);
+      float sz = 15.0*fr;
+      
+      String postfix = (int)(angle/PI*180.0)+ "_" + i;
+      boxNames[i] = "box_" + postfix;
+      boxes[i] = new Body(boxNames[i],world, new GeomBox(sz,sz,sz));
+      boxes[i].adjustMass(0.8*fr);    
+      boxes[i].setPosition(px, py, pz);
+      boxes[i].setLinearVel(0,0,0);
+  
+      names[i] = "hinge_" + postfix;
+     
+        JointUniversal jh = new JointUniversal(names[i], world, jointGroup);
+        
+        if (i > 0) { 
+          jh.attach(boxes[i-1], boxes[i]);
+        } else {
+          jh.attach(main, boxes[i]);
+        }
+        
+        jh.setAnchor(px, py, pz);
+        
+        float ay;
+        ay = sin(angle);
+        float az;
+        az = cos(angle);
+        jh.setAxis1(-ay,0,az);
+        
+        jh.setAxis2(az,0,ay);
+        println(names[i] + " " + ay + " " + az);
+      
+        jh.setParam(Ode.dParamLoStop,  -PI/3);
+        jh.setParam(Ode.dParamHiStop,   PI/3);
+        jh.setParam(Ode.dParamLoStop2, -PI/10);
+        jh.setParam(Ode.dParamHiStop2,  PI/10);
+        jh.setParam(Ode.dParamBounce,  1.0);
+        jh.setParam(Ode.dParamStopERP, 0.1f);
+        jh.setParam(Ode.dParamStopCFM, 0.2f);
+      
+        jh.setParam(Ode.dParamFMax, 1000);
+      
+      
+    }
+    
+    for (int i = 0; i <boxes.length; i++) {
+      space.addBodyGeoms(boxes[i]);
+    }
+  }
+  
+  
+  void update() {
+    float vel = 0.2*(2*sin(tme*4)); //+ (noise(tme)-0.5)/2.0) ;
+    int iMax = int(NUM_BOXES/2);
+    for (int i = 0; i < iMax; i++ ) {
+        JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
+        if (joint != null) {
+          //println("vel " + vel);
+          joint.setParam(Ode.dParamVel, vel*(1.0 - i/iMax) );
+          //joint.setDesiredAngularVelocity1(vel*(1.0-i/iMax));        
+        }
+    }
+  
+    for (int i = 1; i < NUM_BOXES; i++ ) {
+      JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
+      //joint.setDesiredAngularVelocity2(0);
+      if (joint != null) 
+        joint.setParam(Ode.dParamVel2, 0);
+    } 
+  }
+  
+  void draw() {
+     /// draw boxes
+    for (int i = 0; i <boxes.length; i++) {
+      pushMatrix();
+      noStroke();
+  
+      float pos[] = new float[3];
+      boxes[i].getPosition(pos);
+      translate(pos[0], pos[1], pos[2]);
+      
+      Matrix3f rot = new Matrix3f();
+      boxes[i].getRotation(rot);
+      applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
+                  rot.m10, rot.m11, rot.m12, 0.0,
+                  rot.m20, rot.m21, rot.m22, 0.0,
+                  0.0,     0.0,     0.0,     1.0);
+  
+      float [] sz = ((GeomBox) boxes[i].getGeom()).getLengths();
+      drawBox(sz[0]/2);
+   
+      popMatrix();  
+    } 
+  }
+};
+
+
 
 int wd = 20;
 float spc = 60;
@@ -43,7 +167,7 @@ float[] indices;
  
 void setup() {
    size(500,500,P3D); 
-   frameRate(50);
+   frameRate(15);
    
   heights =  new float[wd*wd*18]; /// wd*wd*3*2 vertices, each made of 3 floats
 
@@ -185,57 +309,23 @@ void setupODE()
 {
   Odejava.init();
   world = new World();
-  world.setGravity(0f, 2.5f, 0f);
+  //world.setGravity(0f, 2.5f, 0f);
   
   collision = new JavaCollision(world);
   collision.setSurfaceMu(5.0);
   
   jointGroup = new JointGroup();
   
-  boxes= new Body[NUM_BOXES];
-  
-  boxes[0] = new Body("rootbox",world, new GeomBox(20,20,20));
-  boxes[0].adjustMass(1);    
+  main = new Body("rootbox",world, new GeomBox(20,20,20));
+  main.adjustMass(1);    
     
-  float x = 20;// (20+boxes.length)/2*random(-1,1);
+  float x = 0;// (20+boxes.length)/2*random(-1,1);
   float y = -150;//-50 + random(-2*boxes.length,0);
   float z = 20;//(20+boxes.length)/2*random(-1,1);
-  boxes[0].setPosition(x,y,z);
-  boxes[0].setLinearVel(0,0,0); 
+  main.setPosition(x,y,z);
+  main.setLinearVel(0,0,0); 
+  
 
-  float dx = 11;
-  float dy = 2;
-    float newx = x+dx;
-  float newy = y;
-    
-  for (int i = 1; i <boxes.length; i++) { 
-    newx += dx;
-    newy += dy;
-    
-    float fr = (1.0 - 0.5*(float)i/(float)boxes.length);
-    float sz = 15.0*fr;
-    
-    boxes[i] = new Body("box" + i,world, new GeomBox(sz,sz,sz));
-    boxes[i].adjustMass(0.8*fr);    
-    boxes[i].setPosition(newx,newy,z);
-    boxes[i].setLinearVel(0,0,0);
-    
-    JointUniversal jh = new JointUniversal("hinge"+i, world,jointGroup);
-    jh.attach(boxes[i-1], boxes[i]);
-    jh.setAnchor(newx-dx/2, newy-dy/2, z);
-    jh.setAxis1(0,0,1);
-    jh.setAxis2(0,1,0);
-    
-    jh.setParam(Ode.dParamLoStop, -PI/3);
-    jh.setParam(Ode.dParamHiStop,  PI/3);
-    jh.setParam(Ode.dParamLoStop2, -PI/10);
-    jh.setParam(Ode.dParamHiStop2,  PI/10);
-    jh.setParam(Ode.dParamBounce,  1.0);
-    jh.setParam(Ode.dParamStopERP, 0.1f);
-    jh.setParam(Ode.dParamStopCFM, 0.2f);
-    
-    jh.setParam(Ode.dParamFMax, 1000);
-  }
   
   GeomPlane groundGeom = new GeomPlane("plane",0, -1, 0, 0);        
   
@@ -247,9 +337,16 @@ void setupODE()
   space.add(groundGeom);
   //space.add(terrain);
   
-  for (int i = 0; i <boxes.length; i++) {
-    space.addBodyGeoms(boxes[i]);
+  arms = new arm[4];
+  for (int i = 0; i < arms.length; i++) {
+    float angle = (float)i/(float)arms.length*2*PI;
+    arms[i] = new arm(angle, main, x+10*cos(angle),y,z + 10*sin(angle));  
+    
+    
   }
+  
+  
+
 }
     
 
@@ -308,21 +405,9 @@ void draw() {
   }
 
 
-  float vel = 0.2*(2*sin(tme*4)+ (noise(tme)-0.5)/2.0) ;
-  int iMax = int(NUM_BOXES/2);
-  for (int i = 1; i < iMax; i++ ) {
-        JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
-        if (joint != null) {
-          //println("vel " + vel);
-          joint.setParam(Ode.dParamVel, vel*(1.0 - i/iMax) );
-          //joint.setDesiredAngularVelocity1(vel*(1.0-i/iMax));        
-        }
-  }
   
-  for (int i = 1; i < NUM_BOXES; i++ ) {
-    JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
-    //joint.setDesiredAngularVelocity2(0);
-    joint.setParam(Ode.dParamVel2, 0);
+  for (int i = 0; i < arms.length; i++) {
+    arms[i].update(); 
   }
   
         /*
@@ -341,7 +426,7 @@ void draw() {
   pushMatrix();
   //lights();
  
-  ambientLight(40,40,40);
+  ambientLight(80,80,80);
   translate(width/2,3*height/4+yoff,zoff);
   
   rotateY(angle);
@@ -351,31 +436,33 @@ void draw() {
      space.remove(bomb);
     bombEnable = false; 
   }
+  
+  
 
   //draw ground
   drawGrid();
   //drawGround();
+   pushMatrix();
+      noStroke();
   
-  /// draw boxes
-  for (int i = 0; i <boxes.length; i++) {
-    pushMatrix();
-    noStroke();
-
-    float pos[] = new float[3];
-    boxes[i].getPosition(pos);
-    translate(pos[0], pos[1], pos[2]);
-    
-    Matrix3f rot = new Matrix3f();
-    boxes[i].getRotation(rot);
-    applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
-                rot.m10, rot.m11, rot.m12, 0.0,
-                rot.m20, rot.m21, rot.m22, 0.0,
-                0.0,     0.0,     0.0,     1.0);
-
-    float [] sz = ((GeomBox) boxes[i].getGeom()).getLengths();
-    drawBox(sz[0]/2);
- 
-    popMatrix();  
+      float pos[] = new float[3];
+      main.getPosition(pos);
+      translate(pos[0], pos[1], pos[2]);
+      
+      Matrix3f rot = new Matrix3f();
+      main.getRotation(rot);
+      applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
+                  rot.m10, rot.m11, rot.m12, 0.0,
+                  rot.m20, rot.m21, rot.m22, 0.0,
+                  0.0,     0.0,     0.0,     1.0);
+  
+      float [] sz = ((GeomBox) main.getGeom()).getLengths();
+      drawBox(sz[0]/2);
+   
+      popMatrix();  
+      
+  for (int i = 0; i < arms.length; i++) {
+    arms[i].draw(); 
   }
   
   popMatrix();

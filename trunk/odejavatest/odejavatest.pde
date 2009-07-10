@@ -30,13 +30,16 @@ JavaCollision collision;
 GeomSphere bomb;
 boolean bombEnable = false;
 float bombSize = 150;
+JointGroup jointGroup;
 
-final int NUM_BOXES = 10;
+final int NUM_BOXES = 13;
 
 int wd = 20;
 float spc = 60;
 float[] heights;
 float[] indices;
+ 
+ float tme = 0;
  
 void setup() {
    size(500,500,P3D); 
@@ -100,106 +103,7 @@ void setup() {
 }
 
 float zoff;
-float yoff=200;
-
-
-void draw() {
-  if (keyPressed) {
-     if (key =='a') {
-       angle += PI/100.0;
-     } 
-     if (key =='d') {
-       angle -= PI/99.0;
-     } 
-     
-     if (key =='q') {
-       yoff += 10;
-     } 
-     if (key =='z') {
-       yoff -= 9.0;
-     } 
-          if (key =='w') {
-       zoff += 10;
-     } 
-     if (key =='s') {
-       zoff -= 9.0;
-     } 
-     
-     if (key == 'b') {
-       println("bomb!");
-       bombEnable = true;
-       space.add(bomb);
-     }
-  }
-  
- 
-  
-  // update stuff
-  collision.collide(space);
-  
-  Contact contact = new Contact( collision.getContactIntBuffer(),
-        	collision.getContactFloatBuffer());
-  for (int i = 0; i < collision.getContactCount(); i++) {
-    contact.setIndex(i);
-    Geom geo1 = contact.getGeom1();
-    Geom geo2 = contact.getGeom2();
-    /// TBD getName crashes when there is no name
-    if ((geo1.getName().equals("bomb")) || (geo2.getName().equals("bomb"))) {
-      contact.setSoftErp(0);
-      contact.setSoftCfm(1);
-      //contact.ignoreContact();  // this works
-    }
-  }
-  
-  collision.applyContacts();
-  world.step();
-  
-  
- 
-  
-  /// draw
-  background(0);
-  pushMatrix();
-  //lights();
- 
-  ambientLight(20,20,20);
-  translate(width/2,3*height/4+yoff,zoff);
-  
-  rotateY(angle);
-   directionalLight(255,255,180,1,0.4,0 );
-  if (bombEnable) {
-   sphere(bombSize);
-     space.remove(bomb);
-    bombEnable = false; 
-  }
-
-  //draw ground
-  drawGrid();
-  //drawGround();
-  
-  /// draw boxes
-  for (int i = 0; i <boxes.length; i++) {
-    pushMatrix();
-    noStroke();
-
-    float pos[] = new float[3];
-    boxes[i].getPosition(pos);
-    translate(pos[0], pos[1], pos[2]);
-    
-    Matrix3f rot = new Matrix3f();
-    boxes[i].getRotation(rot);
-    applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
-                rot.m10, rot.m11, rot.m12, 0.0,
-                rot.m20, rot.m21, rot.m22, 0.0,
-                0.0,     0.0,     0.0,     1.0);
-
-    drawBox(5);
- 
-    popMatrix();  
-  }
-  
-  popMatrix();
-}
+float yoff=10;
 
 void drawGround() {
   pushMatrix();
@@ -272,28 +176,66 @@ void cleanupOde()
   world.delete();
   Ode.dCloseODE();
 }
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
     
 void setupODE()
 {
   Odejava.init();
   world = new World();
-  world.setGravity(0f, 0.5f, 0f);
+  world.setGravity(0f, 2.5f, 0f);
   
   collision = new JavaCollision(world);
-  collision.setSurfaceMu(2000.0);
+  collision.setSurfaceMu(5.0);
+  
+  jointGroup = new JointGroup();
   
   boxes= new Body[NUM_BOXES];
-  for (int i = 0; i <boxes.length; i++) {
-    boxes[i] = new Body("box" + i,world, new GeomBox(10,10,10));        
+  
+  boxes[0] = new Body("rootbox",world, new GeomBox(20,20,20));
+  boxes[0].adjustMass(1);    
     
-    float x = (20+boxes.length)/2*random(-1,1);
-    float y = -50 + random(-2*boxes.length,0);
-    float z = (20+boxes.length)/2*random(-1,1);
-    boxes[i].setPosition(x,y,z);
+  float x = 20;// (20+boxes.length)/2*random(-1,1);
+  float y = -150;//-50 + random(-2*boxes.length,0);
+  float z = 20;//(20+boxes.length)/2*random(-1,1);
+  boxes[0].setPosition(x,y,z);
+  boxes[0].setLinearVel(0,0,0); 
+
+  float dx = 11;
+  float dy = 2;
+    float newx = x+dx;
+  float newy = y;
+    
+  for (int i = 1; i <boxes.length; i++) { 
+    newx += dx;
+    newy += dy;
+    
+    float fr = (1.0 - 0.5*(float)i/(float)boxes.length);
+    float sz = 15.0*fr;
+    
+    boxes[i] = new Body("box" + i,world, new GeomBox(sz,sz,sz));
+    boxes[i].adjustMass(0.8*fr);    
+    boxes[i].setPosition(newx,newy,z);
     boxes[i].setLinearVel(0,0,0);
+    
+    JointUniversal jh = new JointUniversal("hinge"+i, world,jointGroup);
+    jh.attach(boxes[i-1], boxes[i]);
+    jh.setAnchor(newx-dx/2, newy-dy/2, z);
+    jh.setAxis1(0,0,1);
+    jh.setAxis2(0,1,0);
+    
+    jh.setParam(Ode.dParamLoStop, -PI/3);
+    jh.setParam(Ode.dParamHiStop,  PI/3);
+    jh.setParam(Ode.dParamLoStop2, -PI/10);
+    jh.setParam(Ode.dParamHiStop2,  PI/10);
+    jh.setParam(Ode.dParamBounce,  1.0);
+    jh.setParam(Ode.dParamStopERP, 0.1f);
+    jh.setParam(Ode.dParamStopCFM, 0.2f);
+    
+    jh.setParam(Ode.dParamFMax, 1000);
   }
-  
-  
   
   GeomPlane groundGeom = new GeomPlane("plane",0, -1, 0, 0);        
   
@@ -312,6 +254,133 @@ void setupODE()
     
 
     
+    ////////////////////////////////////////////////
+    
+    
+
+void draw() {
+  tme += 0.01;
+  if (keyPressed) {
+     if (key =='a') {
+       angle += PI/100.0;
+     } 
+     if (key =='d') {
+       angle -= PI/99.0;
+     } 
+     
+     if (key =='q') {
+       yoff += 10;
+     } 
+     if (key =='z') {
+       yoff -= 9.0;
+     } 
+          if (key =='w') {
+       zoff += 10;
+     } 
+     if (key =='s') {
+       zoff -= 9.0;
+     } 
+     
+     if (key == 'b') {
+       println("bomb!");
+       bombEnable = true;
+       space.add(bomb);
+     }
+  }
+  
+ 
+  
+  // update stuff
+  collision.collide(space);
+  
+  Contact contact = new Contact( collision.getContactIntBuffer(),
+        	collision.getContactFloatBuffer());
+  for (int i = 0; i < collision.getContactCount(); i++) {
+    contact.setIndex(i);
+    Geom geo1 = contact.getGeom1();
+    Geom geo2 = contact.getGeom2();
+    /// TBD getName crashes when there is no name
+    if ((geo1.getName().equals("bomb")) || (geo2.getName().equals("bomb"))) {
+      contact.setSoftErp(0);
+      contact.setSoftCfm(1);
+      //contact.ignoreContact();  // this works
+    }
+  }
+
+
+  float vel = 0.2*(2*sin(tme*4)+ (noise(tme)-0.5)/2.0) ;
+  int iMax = int(NUM_BOXES/2);
+  for (int i = 1; i < iMax; i++ ) {
+        JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
+        if (joint != null) {
+          //println("vel " + vel);
+          joint.setParam(Ode.dParamVel, vel*(1.0 - i/iMax) );
+          //joint.setDesiredAngularVelocity1(vel*(1.0-i/iMax));        
+        }
+  }
+  
+  for (int i = 1; i < NUM_BOXES; i++ ) {
+    JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
+    //joint.setDesiredAngularVelocity2(0);
+    joint.setParam(Ode.dParamVel2, 0);
+  }
+  
+        /*
+        Iterator iter = jointGroup.getJointList().iterator();
+        if (iter.hasNext()) {
+            joint = (JointHinge2) iter.next();
+            */
+            
+
+  
+  collision.applyContacts();
+  world.step();
+
+  /// draw
+  background(0);
+  pushMatrix();
+  //lights();
+ 
+  ambientLight(40,40,40);
+  translate(width/2,3*height/4+yoff,zoff);
+  
+  rotateY(angle);
+   directionalLight(255,255,180,1,0.4,0 );
+  if (bombEnable) {
+   sphere(bombSize);
+     space.remove(bomb);
+    bombEnable = false; 
+  }
+
+  //draw ground
+  drawGrid();
+  //drawGround();
+  
+  /// draw boxes
+  for (int i = 0; i <boxes.length; i++) {
+    pushMatrix();
+    noStroke();
+
+    float pos[] = new float[3];
+    boxes[i].getPosition(pos);
+    translate(pos[0], pos[1], pos[2]);
+    
+    Matrix3f rot = new Matrix3f();
+    boxes[i].getRotation(rot);
+    applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
+                rot.m10, rot.m11, rot.m12, 0.0,
+                rot.m20, rot.m21, rot.m22, 0.0,
+                0.0,     0.0,     0.0,     1.0);
+
+    float [] sz = ((GeomBox) boxes[i].getGeom()).getLengths();
+    drawBox(sz[0]/2);
+ 
+    popMatrix();  
+  }
+  
+  popMatrix();
+}
+
 
 
 

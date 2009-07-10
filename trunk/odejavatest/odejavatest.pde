@@ -1,7 +1,18 @@
 /**
 binarymillenium July 2009
 GNU GPL v3.0
-odejava libs https://odejava.dev.java.net/servlets/ProjectDocumentList?collapseFolder=1836&folderID=0
+odejava libs https://odejava.dev.java.net/
+
+https://odejava.dev.java.net/files/documents/1109/8349/2004-10-30_windows.zip
+https://odejava.dev.java.net/files/documents/1109/27450/odejava-2006-01-15_cvs.tar.gz
+
+unzip/untar both.
+
+Create a processing folder/libraries/odejava dir, and library subdir to that.
+
+Move the uncompressed odejava/odejava.jar and odejava/lib/* into it
+
+Copy odejava.dll from windows/release into the the libraries/odejava/library dir.
 */
 
 //import org.odejava.display.*;

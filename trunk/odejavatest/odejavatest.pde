@@ -35,7 +35,7 @@ Body main;
 arm[] arms;
 
 class arm {
-  final int NUM_BOXES = 4;
+  final static int NUM_BOXES = 5;
   Body[] boxes;
   
   float angle;
@@ -61,15 +61,15 @@ class arm {
       float py = y;
       float pz = z + cos(angle)*newy + sin(angle)*newx;
       
-      float fr = (1.0 - 0.5*(float)i/(float)boxes.length);
+      float fr = (1.0 - 0.99*(float)i/(float)boxes.length);
       float sz = 15.0*fr;
       
       String postfix = (int)(angle/PI*180.0)+ "_" + i;
       boxNames[i] = "box_" + postfix;
-      boxes[i] = new Body(boxNames[i],world, new GeomBox(sz,sz,sz));
+      boxes[i] = new Body(boxNames[i],world, new GeomBox(sz*0.99,sz*0.99,sz*0.99));
       boxes[i].adjustMass(0.8*fr);    
       boxes[i].setPosition(px, py, pz);
-      boxes[i].setQuaternion(new Quat4f(0,1*sin(angle),0,cos(angle)));
+      boxes[i].setQuaternion(new Quat4f(0,sin(-angle/2),0,cos(-angle/2)));
       boxes[i].setLinearVel(0,0,0);
   
       names[i] = "hinge_" + postfix;
@@ -98,17 +98,17 @@ class arm {
         jh.setParam(Ode.dParamLoStop2, -PI/10);
         jh.setParam(Ode.dParamHiStop2,  PI/10);
         jh.setParam(Ode.dParamBounce,  1.0);
-        jh.setParam(Ode.dParamStopERP, 0.1f);
-        jh.setParam(Ode.dParamStopCFM, 0.9f);
+        jh.setParam(Ode.dParamStopERP, 0.01f);
+        jh.setParam(Ode.dParamStopCFM, 0.99f);
       
-        jh.setParam(Ode.dParamFMax, 1000);
-      
-      
+        jh.setParam(Ode.dParamFMax, 1000); 
     }
     
+    /*
     for (int i = 0; i <boxes.length; i++) {
       space.addBodyGeoms(boxes[i]);
-    }
+    }*/
+     space.addBodyGeoms(boxes[boxes.length-1]);
   }
   
   float velf = 0.20;
@@ -116,7 +116,7 @@ class arm {
   void update() {
     int iMax = int(NUM_BOXES/2);
     for (int i = 0; i < iMax; i++ ) {
-      float mix = 0.8;
+      float mix = 0.65;
           float vel = velf*(mix*sin(tme*4) + (1.0-mix)*(noise(tme+i*1000+angle*1000)-0.5)) ;  
           //if (vel > 0) vel*=2;
       JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
@@ -130,13 +130,12 @@ class arm {
             Matrix3f rot = new Matrix3f();
             part.getRotation(rot);
       
-            float f = -12*vel;
+            float f = -1.5*vel*((GeomBox) part.getGeom()).getLengths()[0];
             //println(rot.m10 + " " + rot.m11 + " " + rot.m12);
             part.addForce(f*rot.m01, f*rot.m11, f*rot.m21); 
-            //main.addForce(0, f, 0); 
+
           }
-          //joint.
-          //joint.setDesiredAngularVelocity1(vel*(1.0-i/iMax));        
+         
         } 
     }
     Vector3f frc = main.getForce();
@@ -150,7 +149,7 @@ class arm {
     
     if (velf > 0.4) velf = 0.3;
     if (velf < 0) velf = 0;
-    //println(mvel + "  " + velf);
+    println(mvel + "  " + velf);
   
     for (int i = 1; i < NUM_BOXES; i++ ) {
       JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
@@ -163,65 +162,72 @@ class arm {
   void draw() {
      /// draw boxes
      //stroke(255,255,0);
-     //noFill();
+     noFill();
      //strokeWeight(5.0);
-     beginShape();
+    // beginShape();
      
      float[] oldposf = new float[3];
      main.getPosition(oldposf);
      Vector3f oldpos = new Vector3f(oldposf);
+     Matrix3f oldrot = new Matrix3f();
+     boxes[0].getRotation(oldrot);
+     float oldf = ((GeomBox) main.getGeom()).getLengths()[0]/2;
      
     for (int i = 0; i <boxes.length; i++) {
       pushMatrix();
      // noStroke();
   
       float posf[] = new float[3];
-      boxes[i].getPosition(posf);
-       
+      boxes[i].getPosition(posf);  
       Vector3f pos = new Vector3f(posf);
-      oldpos.sub(pos); 
-      float dx = oldpos.length();
-      oldpos = pos;
-      
-      translate(posf[0], posf[1], posf[2]);
       
       Matrix3f rot = new Matrix3f();
       boxes[i].getRotation(rot);
-      /*
-      applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
-                  rot.m10, rot.m11, rot.m12, 0.0,
-                  rot.m20, rot.m21, rot.m22, 0.0,
-                  0.0,     0.0,     0.0,     1.0);*/
+
   
       float sz = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
       
+      fill(255.0, 255.0*i/(float)boxes.length, 0.0 );
+      vertex(posf[0], posf[1], posf[2]);
+      float f = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
+      beginShape(QUAD_STRIP);
+      vertex(posf[0]  + f*rot.m01,       posf[1]  + f*rot.m11,       posf[2]  + f*rot.m21); 
+      vertex(oldpos.x + oldf*oldrot.m01, oldpos.y + oldf*oldrot.m11, oldpos.z + oldf*oldrot.m21); 
+      vertex(posf[0]  + f*rot.m02,       posf[1]  + f*rot.m12,       posf[2]  + f*rot.m22);
+      vertex(oldpos.x + oldf*oldrot.m02, oldpos.y + oldf*oldrot.m12, oldpos.z + oldf*oldrot.m22); 
+      vertex(posf[0]  - f*rot.m01,       posf[1]  - f*rot.m11,       posf[2]  - f*rot.m21);
+      vertex(oldpos.x - oldf*oldrot.m01, oldpos.y - oldf*oldrot.m11, oldpos.z - oldf*oldrot.m21); 
+      vertex(posf[0]  - f*rot.m02,       posf[1]  - f*rot.m12,       posf[2]  - f*rot.m22);
+      vertex(oldpos.x - oldf*oldrot.m02, oldpos.y - oldf*oldrot.m12, oldpos.z - oldf*oldrot.m22);
+      vertex(posf[0]  + f*rot.m01,       posf[1]  + f*rot.m11,       posf[2]  + f*rot.m21); 
+      vertex(oldpos.x + oldf*oldrot.m01, oldpos.y + oldf*oldrot.m11, oldpos.z + oldf*oldrot.m21); 
+      endShape();
+      oldpos = pos;
+      oldrot = rot;
+      oldf = f;
       //vertex(posf[0], posf[1], posf[2]);
+
+      //println(sz + " " + dx);  */
       
-      stroke(255.0, 255.0*i/(float)boxes.length, 0.0 );
-      vertex(posf[0], posf[1], posf[2]);
-      float f  = 5.0;
-      vertex(posf[0] + f*rot.m01, posf[1]+f*rot.m11, posf[2]+f*rot.m21);  
-      vertex(posf[0], posf[1], posf[2]);
-      /*
-   beginShape(QUAD_STRIP);
-    vertex(  -dx, sz,-sz );
-    vertex(   0, sz,-sz );
-    vertex(  -dx, sz, sz );
-    vertex(  0, sz, sz );
-    vertex(  -dx,-sz, sz );
-    vertex(  0,-sz, sz );
-    vertex(  -dx,-sz, -sz );
-    vertex(  0,-sz, -sz );
-    vertex(  -dx, sz, -sz );
-    vertex(  0, sz, -sz );
-  endShape();
-  println(sz + " " + dx);  */
-      //drawBox(sz[0]/2);
+        /*   
+      translate(posf[0], posf[1], posf[2]);
+      
+      applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
+                  rot.m10, rot.m11, rot.m12, 0.0,
+                  rot.m20, rot.m21, rot.m22, 0.0,
+                  0.0,     0.0,     0.0,     1.0);
+           */       
+      /* // this comes out inverted
+      applyMatrix(rot.m00, rot.m11, rot.m20, 0.0,
+                  rot.m01, rot.m11, rot.m21, 0.0,
+                  rot.m02, rot.m12, rot.m22, 0.0,
+                  0.0,     0.0,     0.0,     1.0);*/
+      //drawBox(f);
    
       popMatrix();  
       
     } 
-    endShape();
+    //endShape();
   }
 };
 
@@ -350,7 +356,6 @@ void drawBox(float sz) {
     vertex(  sz,  sz, -sz );
     vertex(  sz, -sz, sz );
     vertex(  sz,  sz, sz );
-
   endShape();
   
   beginShape(QUAD_STRIP);
@@ -358,8 +363,8 @@ void drawBox(float sz) {
     vertex(  -sz,  sz, -sz );
     vertex(  -sz, -sz,sz );
     vertex(  -sz,  sz, sz );
-
   endShape();
+  
 }
 
 void cleanupOde() 
@@ -378,7 +383,7 @@ void setupODE()
 {
   Odejava.init();
   world = new World();
- world.setGravity(0f, 0.5f, 0f);
+  world.setGravity(0f, 0.5f, 0f);
   
   collision = new JavaCollision(world);
   collision.setSurfaceMu(5.0);
@@ -408,9 +413,9 @@ void setupODE()
   space.addBodyGeoms(main);
   //space.add(terrain);
   
-  arms = new arm[2];
+  arms = new arm[4];
   for (int i = 0; i < arms.length; i++) {
-    float angle = (float)i/(float)arms.length*2*PI;
+    float angle = PI*0.3 +(float)i/(float)arms.length*2*PI;
     arms[i] = new arm(angle, main, x+10*cos(angle),y,z + 10*sin(angle));  
     
     
@@ -479,7 +484,12 @@ void draw() {
     }
     
     //if ((name1.charAt(name1.length()-1) == name2.charAt(name2.length()-1) )) {
-    if (name1.charAt(0) == name2.charAt(0) ) {
+    if (name1.equals("plane") || name2.equals("plane") ) {
+      if ((match(name1,str(arm.NUM_BOXES-1)) == null) && (match(name2,str(arm.NUM_BOXES-1)) ==null)) {
+        contact.ignoreContact();
+      }
+      
+    }else {
       contact.ignoreContact();
       //println(name1 + " " + name2);
       

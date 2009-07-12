@@ -93,8 +93,8 @@ class arm {
         jh.setAxis2(az,0,ay);
         println(names[i] + " " + ay + " " + az);
       
-        jh.setParam(Ode.dParamLoStop,  -PI/3);
-        jh.setParam(Ode.dParamHiStop,   PI/3);
+        jh.setParam(Ode.dParamLoStop,  -PI/4);
+        jh.setParam(Ode.dParamHiStop,  PI/4);
         jh.setParam(Ode.dParamLoStop2, -PI/10);
         jh.setParam(Ode.dParamHiStop2,  PI/10);
         jh.setParam(Ode.dParamBounce,  1.0);
@@ -111,19 +111,47 @@ class arm {
     }
   }
   
+  float velf = 0.20;
   
   void update() {
-
     int iMax = int(NUM_BOXES/2);
     for (int i = 0; i < iMax; i++ ) {
-          float vel = 0.2*(2*sin(tme*4) + (noise(tme)-0.5)/2.0) ;  
+      float mix = 0.8;
+          float vel = velf*(mix*sin(tme*4) + (1.0-mix)*(noise(tme+i*1000+angle*1000)-0.5)) ;  
+          //if (vel > 0) vel*=2;
       JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
         if (joint != null) {
           //println("vel " + vel);
-          joint.setParam(Ode.dParamVel, vel*(1.0 - i/iMax) );
+          joint.setParam(Ode.dParamVel, -vel*(1.0 - i/iMax) );
+          
+          if (vel > 0) {
+            Body part = world.getBody(boxNames[i]);
+            
+            Matrix3f rot = new Matrix3f();
+            part.getRotation(rot);
+      
+            float f = -12*vel;
+            //println(rot.m10 + " " + rot.m11 + " " + rot.m12);
+            main.addForce(f*rot.m10, f*rot.m11, f*rot.m12); 
+            //main.addForce(0, f, 0); 
+          }
+          //joint.
           //joint.setDesiredAngularVelocity1(vel*(1.0-i/iMax));        
-        }
+        } 
     }
+    Vector3f frc = main.getForce();
+    //println(angle + " " + frc.x + " " + frc.y + " " + frc.z);
+    
+    
+    float mvel = main.getLinearVel().y;
+    
+    if (mvel < 0) velf -= (0.0002*noise(tme+1000))*abs(mvel);
+    if (mvel > 0) velf += (0.0002*noise(tme+2000))*abs(mvel);
+    
+    if (velf > 0.4) velf = 0.3;
+    if (velf < 0) velf = 0;
+    //println(mvel + "  " + velf);
+
   
     for (int i = 1; i < NUM_BOXES; i++ ) {
       JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
@@ -311,14 +339,14 @@ void setupODE()
 {
   Odejava.init();
   world = new World();
-  world.setGravity(0f, 2.5f, 0f);
+ world.setGravity(0f, 0.5f, 0f);
   
   collision = new JavaCollision(world);
   collision.setSurfaceMu(5.0);
   
   jointGroup = new JointGroup();
   
-  main = new Body("rootbox",world, new GeomBox(20,20,20));
+  main = new Body("boxroot",world, new GeomBox(20,20,20));
   main.adjustMass(1);    
     
   float x = 0;// (20+boxes.length)/2*random(-1,1);
@@ -337,6 +365,8 @@ void setupODE()
   
   space = new HashSpace();        
   space.add(groundGeom);
+  
+  space.addBodyGeoms(main);
   //space.add(terrain);
   
   arms = new arm[6];
@@ -405,12 +435,15 @@ void draw() {
     if ((name1.equals("bomb")) || (name2.equals("bomb"))) {
       contact.setSoftErp(0);
       contact.setSoftCfm(1);
+      contact.setBounce(1.25);
       //contact.ignoreContact();  // this works
     }
     
-    if ((name1.charAt(name1.length()-1) == '0') && (name2.charAt(name2.length()-1) == '0')) {
+    //if ((name1.charAt(name1.length()-1) == name2.charAt(name2.length()-1) )) {
+    if (name1.charAt(0) == name2.charAt(0) ) {
       contact.ignoreContact();
-      //println(name1);
+      //println(name1 + " " + name2);
+      
     }
     
   }

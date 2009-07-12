@@ -69,6 +69,7 @@ class arm {
       boxes[i] = new Body(boxNames[i],world, new GeomBox(sz,sz,sz));
       boxes[i].adjustMass(0.8*fr);    
       boxes[i].setPosition(px, py, pz);
+      boxes[i].setQuaternion(new Quat4f(0,1*sin(angle),0,cos(angle)));
       boxes[i].setLinearVel(0,0,0);
   
       names[i] = "hinge_" + postfix;
@@ -98,7 +99,7 @@ class arm {
         jh.setParam(Ode.dParamHiStop2,  PI/10);
         jh.setParam(Ode.dParamBounce,  1.0);
         jh.setParam(Ode.dParamStopERP, 0.1f);
-        jh.setParam(Ode.dParamStopCFM, 0.2f);
+        jh.setParam(Ode.dParamStopCFM, 0.9f);
       
         jh.setParam(Ode.dParamFMax, 1000);
       
@@ -112,10 +113,11 @@ class arm {
   
   
   void update() {
-    float vel = 0.2*(2*sin(tme*4)); //+ (noise(tme)-0.5)/2.0) ;
+
     int iMax = int(NUM_BOXES/2);
     for (int i = 0; i < iMax; i++ ) {
-        JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
+          float vel = 0.2*(2*sin(tme*4) + (noise(tme)-0.5)/2.0) ;  
+      JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
         if (joint != null) {
           //println("vel " + vel);
           joint.setParam(Ode.dParamVel, vel*(1.0 - i/iMax) );
@@ -167,7 +169,7 @@ float[] indices;
  
 void setup() {
    size(500,500,P3D); 
-   frameRate(15);
+   frameRate(50);
    
   heights =  new float[wd*wd*18]; /// wd*wd*3*2 vertices, each made of 3 floats
 
@@ -309,7 +311,7 @@ void setupODE()
 {
   Odejava.init();
   world = new World();
-  //world.setGravity(0f, 2.5f, 0f);
+  world.setGravity(0f, 2.5f, 0f);
   
   collision = new JavaCollision(world);
   collision.setSurfaceMu(5.0);
@@ -337,7 +339,7 @@ void setupODE()
   space.add(groundGeom);
   //space.add(terrain);
   
-  arms = new arm[4];
+  arms = new arm[6];
   for (int i = 0; i < arms.length; i++) {
     float angle = (float)i/(float)arms.length*2*PI;
     arms[i] = new arm(angle, main, x+10*cos(angle),y,z + 10*sin(angle));  
@@ -397,11 +399,20 @@ void draw() {
     Geom geo1 = contact.getGeom1();
     Geom geo2 = contact.getGeom2();
     /// TBD getName crashes when there is no name
-    if ((geo1.getName().equals("bomb")) || (geo2.getName().equals("bomb"))) {
+    String name1 = geo1.getName();
+    String name2 = geo2.getName();
+    
+    if ((name1.equals("bomb")) || (name2.equals("bomb"))) {
       contact.setSoftErp(0);
       contact.setSoftCfm(1);
       //contact.ignoreContact();  // this works
     }
+    
+    if ((name1.charAt(name1.length()-1) == '0') && (name2.charAt(name2.length()-1) == '0')) {
+      contact.ignoreContact();
+      //println(name1);
+    }
+    
   }
 
 

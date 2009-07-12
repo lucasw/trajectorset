@@ -132,7 +132,7 @@ class arm {
       
             float f = -12*vel;
             //println(rot.m10 + " " + rot.m11 + " " + rot.m12);
-            main.addForce(f*rot.m10, f*rot.m11, f*rot.m12); 
+            part.addForce(f*rot.m01, f*rot.m11, f*rot.m21); 
             //main.addForce(0, f, 0); 
           }
           //joint.
@@ -151,7 +151,6 @@ class arm {
     if (velf > 0.4) velf = 0.3;
     if (velf < 0) velf = 0;
     //println(mvel + "  " + velf);
-
   
     for (int i = 1; i < NUM_BOXES; i++ ) {
       JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
@@ -163,26 +162,66 @@ class arm {
   
   void draw() {
      /// draw boxes
+     //stroke(255,255,0);
+     //noFill();
+     //strokeWeight(5.0);
+     beginShape();
+     
+     float[] oldposf = new float[3];
+     main.getPosition(oldposf);
+     Vector3f oldpos = new Vector3f(oldposf);
+     
     for (int i = 0; i <boxes.length; i++) {
       pushMatrix();
-      noStroke();
+     // noStroke();
   
-      float pos[] = new float[3];
-      boxes[i].getPosition(pos);
-      translate(pos[0], pos[1], pos[2]);
+      float posf[] = new float[3];
+      boxes[i].getPosition(posf);
+       
+      Vector3f pos = new Vector3f(posf);
+      oldpos.sub(pos); 
+      float dx = oldpos.length();
+      oldpos = pos;
+      
+      translate(posf[0], posf[1], posf[2]);
       
       Matrix3f rot = new Matrix3f();
       boxes[i].getRotation(rot);
+      /*
       applyMatrix(rot.m00, rot.m01, rot.m02, 0.0,
                   rot.m10, rot.m11, rot.m12, 0.0,
                   rot.m20, rot.m21, rot.m22, 0.0,
-                  0.0,     0.0,     0.0,     1.0);
+                  0.0,     0.0,     0.0,     1.0);*/
   
-      float [] sz = ((GeomBox) boxes[i].getGeom()).getLengths();
-      drawBox(sz[0]/2);
+      float sz = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
+      
+      //vertex(posf[0], posf[1], posf[2]);
+      
+      stroke(255.0, 255.0*i/(float)boxes.length, 0.0 );
+      vertex(posf[0], posf[1], posf[2]);
+      float f  = 5.0;
+      vertex(posf[0] + f*rot.m01, posf[1]+f*rot.m11, posf[2]+f*rot.m21);  
+      vertex(posf[0], posf[1], posf[2]);
+      /*
+   beginShape(QUAD_STRIP);
+    vertex(  -dx, sz,-sz );
+    vertex(   0, sz,-sz );
+    vertex(  -dx, sz, sz );
+    vertex(  0, sz, sz );
+    vertex(  -dx,-sz, sz );
+    vertex(  0,-sz, sz );
+    vertex(  -dx,-sz, -sz );
+    vertex(  0,-sz, -sz );
+    vertex(  -dx, sz, -sz );
+    vertex(  0, sz, -sz );
+  endShape();
+  println(sz + " " + dx);  */
+      //drawBox(sz[0]/2);
    
       popMatrix();  
+      
     } 
+    endShape();
   }
 };
 
@@ -369,7 +408,7 @@ void setupODE()
   space.addBodyGeoms(main);
   //space.add(terrain);
   
-  arms = new arm[6];
+  arms = new arm[2];
   for (int i = 0; i < arms.length; i++) {
     float angle = (float)i/(float)arms.length*2*PI;
     arms[i] = new arm(angle, main, x+10*cos(angle),y,z + 10*sin(angle));  

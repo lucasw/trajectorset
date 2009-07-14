@@ -114,8 +114,9 @@ class arm {
   float velf = 0.20;
   
   void update() {
-    int iMax = int(NUM_BOXES/2);
+    int iMax = int(NUM_BOXES);
     for (int i = 0; i < iMax; i++ ) {
+      float fr = 1.0-(float)i/(float)iMax;
       float mix = 0.65;
           float vel = velf*(mix*sin(tme*4) + (1.0-mix)*(noise(tme+i*1000+angle*1000)-0.5)) ;  
           //if (vel > 0) vel*=2;
@@ -130,7 +131,7 @@ class arm {
             Matrix3f rot = new Matrix3f();
             part.getRotation(rot);
       
-            float f = -1.5*vel*((GeomBox) part.getGeom()).getLengths()[0];
+            float f = -1.5*fr*vel*((GeomBox) part.getGeom()).getLengths()[0];
             //println(rot.m10 + " " + rot.m11 + " " + rot.m12);
             part.addForce(f*rot.m01, f*rot.m11, f*rot.m21); 
 
@@ -173,6 +174,8 @@ class arm {
      boxes[0].getRotation(oldrot);
      float oldf = ((GeomBox) main.getGeom()).getLengths()[0]/2;
      
+     color oldc = color(255.0, 0.0, 0.0 );
+     
     for (int i = 0; i <boxes.length; i++) {
       pushMatrix();
      // noStroke();
@@ -187,24 +190,15 @@ class arm {
   
       float sz = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
       
-      fill(255.0, 255.0*i/(float)boxes.length, 0.0 );
+      color c = color(255.0, 255.0*i/(float)boxes.length, 0.0 );
       vertex(posf[0], posf[1], posf[2]);
       float f = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
-      beginShape(QUAD_STRIP);
-      vertex(posf[0]  + f*rot.m01,       posf[1]  + f*rot.m11,       posf[2]  + f*rot.m21); 
-      vertex(oldpos.x + oldf*oldrot.m01, oldpos.y + oldf*oldrot.m11, oldpos.z + oldf*oldrot.m21); 
-      vertex(posf[0]  + f*rot.m02,       posf[1]  + f*rot.m12,       posf[2]  + f*rot.m22);
-      vertex(oldpos.x + oldf*oldrot.m02, oldpos.y + oldf*oldrot.m12, oldpos.z + oldf*oldrot.m22); 
-      vertex(posf[0]  - f*rot.m01,       posf[1]  - f*rot.m11,       posf[2]  - f*rot.m21);
-      vertex(oldpos.x - oldf*oldrot.m01, oldpos.y - oldf*oldrot.m11, oldpos.z - oldf*oldrot.m21); 
-      vertex(posf[0]  - f*rot.m02,       posf[1]  - f*rot.m12,       posf[2]  - f*rot.m22);
-      vertex(oldpos.x - oldf*oldrot.m02, oldpos.y - oldf*oldrot.m12, oldpos.z - oldf*oldrot.m22);
-      vertex(posf[0]  + f*rot.m01,       posf[1]  + f*rot.m11,       posf[2]  + f*rot.m21); 
-      vertex(oldpos.x + oldf*oldrot.m01, oldpos.y + oldf*oldrot.m11, oldpos.z + oldf*oldrot.m21); 
-      endShape();
+     
+      drawLimb(rot, oldrot, pos,oldpos, f,oldf,c, oldc);
       oldpos = pos;
       oldrot = rot;
       oldf = f;
+      oldc = c;
       //vertex(posf[0], posf[1], posf[2]);
 
       //println(sz + " " + dx);  */
@@ -228,6 +222,31 @@ class arm {
       
     } 
     //endShape();
+  }
+  
+  void drawLimb(Matrix3f rot, Matrix3f oldrot, Vector3f pos, Vector3f oldpos, float f, float oldf, color c, color oldc) {
+    
+    Vector3f ax = new Vector3f( f*rot.m01, f*rot.m11, f*rot.m21);
+    Vector3f ay = new Vector3f( f*rot.m02, f*rot.m12, f*rot.m22);
+    Vector3f bx = new Vector3f(oldf*oldrot.m01, oldf*oldrot.m11, oldf*oldrot.m21); 
+    Vector3f by = new Vector3f(oldf*oldrot.m02, oldf*oldrot.m12, oldf*oldrot.m22); 
+    beginShape(QUAD_STRIP);
+    final int iMax = 50;
+    for (int i = 0; i <= iMax; i++) {
+      float fr = (float)i/(float)iMax;
+      float angle = 2.0*PI*fr;
+      float ca = cos(angle);
+      float sa = sin(angle);
+      Vector3f mixa = new Vector3f(ax.x*ca + ay.x*sa, ax.y*ca + ay.y*sa, ax.z*ca + ay.z*sa);
+      Vector3f mixb = new Vector3f(bx.x*ca + by.x*sa, bx.y*ca + by.y*sa, bx.z*ca + by.z*sa);
+      //color newc = lerpColor(oldc,c,fr);
+      fill(c);
+      vertex(pos.x    + mixa.x, pos.y   + mixa.y, pos.z    + mixa.z); 
+      fill(oldc);
+      vertex(oldpos.x + mixb.x, oldpos.y+ mixb.y, oldpos.z + mixb.z); 
+    }
+      endShape();
+    
   }
 };
 
@@ -550,7 +569,7 @@ void draw() {
                   0.0,     0.0,     0.0,     1.0);
   
       float [] sz = ((GeomBox) main.getGeom()).getLengths();
-      drawBox(sz[0]/2);
+      //drawBox(sz[0]/2);
    
       popMatrix();  
       

@@ -36,14 +36,17 @@ arm[] arms;
 
 class arm {
   final static int NUM_BOXES = 5;
+  final static int NUM_CIRC = 15;
   Body[] boxes;
   
   float angle;
   String[] names;
   String[] boxNames;
   
-  /// vectors that make up the edge of the arm
-  Vector3f[] edge;
+  /// vectors that make up the arm
+  Vector3f[] vrt;
+  /// surface norms
+  Vector3f[] snrm;  
   
   arm(float angle, Body main, float x, float y, float z) {
     this.angle = angle;
@@ -51,7 +54,8 @@ class arm {
     names = new String[NUM_BOXES];
     boxNames = new String[NUM_BOXES];
     
-    edge = new Vector3f[20];
+    vrt = new Vector3f[NUM_CIRC*NUM_BOXES];
+    snrm = new Vector3f[NUM_CIRC*(NUM_BOXES-1)];
     
     float dx = 11;
     float dy = 2;
@@ -182,7 +186,7 @@ class arm {
      
      color oldc = color(255.0, 0.0, 0.0 );
      
-    for (int i = 1; i <boxes.length; i++) {
+    for (int i = 0; i <boxes.length; i++) {
       pushMatrix();
      // noStroke();
   
@@ -193,17 +197,14 @@ class arm {
       Matrix3f rot = new Matrix3f();
       boxes[i].getRotation(rot);
 
-  
       float sz = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
       
       color c = color(255.0, 255.0*i/(float)boxes.length, 0.0 );
       vertex(posf[0], posf[1], posf[2]);
       float f = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
-     
-      Vector3f[] newEdge = new Vector3f[edge.length];
-      drawLimb(rot, oldrot, pos, oldpos, f, oldf, c, oldc, newEdge);
-      if (i == 1) edge = newEdge;
       
+      updateLimb(rot, oldrot, pos, oldpos, f, oldf, c, oldc, i);
+   
       oldpos = pos;
       oldrot = rot;
       oldf = f;
@@ -230,37 +231,51 @@ class arm {
       popMatrix();  
       
     } 
-    //endShape();
+    
+    for (int i = 1; i <boxes.length; i++) {
+      fill(255,0,0);
+      beginShape(QUAD_STRIP);
+      for (int j = 0; j <= NUM_CIRC; j++) { 
+        int ind1 = (i-1)*NUM_CIRC+(j%NUM_CIRC);
+        int ind2 = (i)*NUM_CIRC+(j%NUM_CIRC);
+        vertex(vrt[ind1].x, vrt[ind1].y, vrt[ind1].z);
+        vertex(vrt[ind2].x, vrt[ind2].y, vrt[ind2].z);
+      }
+      endShape();
+    }
   }
   
-  void drawLimb(Matrix3f rot, Matrix3f oldrot, Vector3f pos, Vector3f oldpos,
-                float f, float oldf, color c, color oldc, Vector3f[] edge) {
+  /// get vector positiosn
+  void updateLimb(final Matrix3f rot, final Matrix3f oldrot, 
+                final Vector3f pos, final Vector3f oldpos,
+                final float f, final float oldf, 
+                final color c, final color oldc, 
+                final int ind) {
     
     Vector3f ax = new Vector3f( f*rot.m01, f*rot.m11, f*rot.m21);
     Vector3f ay = new Vector3f( f*rot.m02, f*rot.m12, f*rot.m22);
-    Vector3f bx = new Vector3f(oldf*oldrot.m01, oldf*oldrot.m11, oldf*oldrot.m21); 
-    Vector3f by = new Vector3f(oldf*oldrot.m02, oldf*oldrot.m12, oldf*oldrot.m22); 
+    //Vector3f bx = new Vector3f(oldf*oldrot.m01, oldf*oldrot.m11, oldf*oldrot.m21); 
+    //Vector3f by = new Vector3f(oldf*oldrot.m02, oldf*oldrot.m12, oldf*oldrot.m22); 
     beginShape(QUAD_STRIP);
-    for (int i = 0; i <= edge.length; i++) {
-      float fr = (float)i/(float)edge.length;
+    for (int i = 0; i < NUM_CIRC; i++) {
+      float fr = (float)i/(float)NUM_CIRC;
       float angle = 2.0*PI*fr;
       float ca = cos(angle);
       float sa = sin(angle);
       Vector3f mixa = new Vector3f(ax.x*ca + ay.x*sa, ax.y*ca + ay.y*sa, ax.z*ca + ay.z*sa);
-      Vector3f mixb = new Vector3f(bx.x*ca + by.x*sa, bx.y*ca + by.y*sa, bx.z*ca + by.z*sa);
+      //Vector3f mixb = new Vector3f(bx.x*ca + by.x*sa, bx.y*ca + by.y*sa, bx.z*ca + by.z*sa);
       //color newc = lerpColor(oldc,c,fr);
       
-      if (i < edge.length) edge[i] = new Vector3f(oldpos.x + mixb.x, oldpos.y+ mixb.y, oldpos.z + mixb.z); 
+      vrt[ind*NUM_CIRC+i] = new Vector3f(pos.x + mixa.x, pos.y + mixa.y, pos.z + mixa.z);  
       
-      fill(c);
-      
-      vertex(pos.x    + mixa.x, pos.y   + mixa.y, pos.z    + mixa.z); 
-      fill(oldc);
-      vertex(oldpos.x + mixb.x, oldpos.y+ mixb.y, oldpos.z + mixb.z); 
-    }
-      endShape();
-    
+      // fill(c);
+      //vertex(pos.x    + mixa.x, pos.y   + mixa.y, pos.z    + mixa.z); 
+      //fill(oldc);
+      //vertex(oldpos.x + mixb.x, oldpos.y+ mixb.y, oldpos.z + mixb.z); 
+    }  
   }
+  
+  
 };
 
 
@@ -592,21 +607,23 @@ void draw() {
     fill(250,200,200);
     noStroke();
     beginShape(QUAD_STRIP);
-    for (int j = 0; j <= arms[i].edge.length; j++) {
-      Vector3f v1 = arms[i].edge[j%arms[i].edge.length];
-      Vector3f v2 = arms[(i+1)%arms.length].edge[(arms[i].edge.length-j)%arms[i].edge.length];
+    for (int j = 0; j <= arm.NUM_CIRC; j++) {
+      Vector3f v1 = arms[i].vrt[j%arm.NUM_CIRC];
+      Vector3f v2 = arms[(i+1)%arms.length].vrt[(arm.NUM_CIRC-j)%arm.NUM_CIRC];
       vertex(v1.x,v1.y,v1.z);
       vertex(v2.x,v2.y,v2.z);
     }
     endShape();
   }
   
+  /*
+  
   if (false) {
   {beginShape();
-   Vector3f v1 = arms[0].edge[arms[0].edge.length/2];
-   Vector3f v2 = arms[1].edge[arms[1].edge.length/2];
-   Vector3f v3 = arms[2].edge[arms[2].edge.length/2];
-   Vector3f v4 = arms[3].edge[arms[3].edge.length/2];
+   Vector3f v1 = arms[0].vrt[arm.NUM_CIRC/2];
+   Vector3f v2 = arms[1].vrt[arm.NUM_CIRC/2];
+   Vector3f v3 = arms[2].vrt[arm.NUM_CIRC/2];
+   Vector3f v4 = arms[3].vrt[arm.NUM_CIRC/2];
    vertex(v1.x,v1.y,v1.z);
    vertex(v2.x,v2.y,v2.z);
    vertex(v3.x,v3.y,v3.z);
@@ -627,8 +644,9 @@ void draw() {
    vertex(v1.x,v1.y,v1.z);
    endShape();
   }
-  
   }
+  */
+  
   
   
   popMatrix();

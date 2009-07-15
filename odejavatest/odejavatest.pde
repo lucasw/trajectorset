@@ -42,11 +42,16 @@ class arm {
   String[] names;
   String[] boxNames;
   
+  /// vectors that make up the edge of the arm
+  Vector3f[] edge;
+  
   arm(float angle, Body main, float x, float y, float z) {
     this.angle = angle;
     boxes = new Body[NUM_BOXES];
     names = new String[NUM_BOXES];
     boxNames = new String[NUM_BOXES];
+    
+    edge = new Vector3f[20];
     
     float dx = 11;
     float dy = 2;
@@ -114,30 +119,29 @@ class arm {
   float velf = 0.20;
   
   void update() {
+
     int iMax = int(NUM_BOXES);
     for (int i = 0; i < iMax; i++ ) {
       float fr = 1.0-(float)i/(float)iMax;
       float mix = 0.65;
-          float vel = velf*(mix*sin(tme*4) + (1.0-mix)*(noise(tme+i*1000+angle*1000)-0.5)) ;  
-          //if (vel > 0) vel*=2;
+      float vel = velf*(mix*sin(tme*4) + (1.0-mix)*(noise(tme+i*1000+angle*1000)-0.5)) ;  
+      //if (vel > 0) vel*=2;
       JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
-        if (joint != null) {
-          //println("vel " + vel);
-          joint.setParam(Ode.dParamVel, -vel*(1.0 - i/iMax) );
+      if (joint != null) {
+        //println("vel " + vel);
+        joint.setParam(Ode.dParamVel, -vel*(1.0 - i/iMax) );
+        
+        if (vel > 0) {
+          Body part = world.getBody(boxNames[i]);
           
-          if (vel > 0) {
-            Body part = world.getBody(boxNames[i]);
-            
-            Matrix3f rot = new Matrix3f();
-            part.getRotation(rot);
-      
-            float f = -1.5*fr*vel*((GeomBox) part.getGeom()).getLengths()[0];
-            //println(rot.m10 + " " + rot.m11 + " " + rot.m12);
-            part.addForce(f*rot.m01, f*rot.m11, f*rot.m21); 
-
-          }
-         
-        } 
+          Matrix3f rot = new Matrix3f();
+          part.getRotation(rot);
+    
+          float f = -1.5*fr*vel*((GeomBox) part.getGeom()).getLengths()[0];
+          //println(rot.m10 + " " + rot.m11 + " " + rot.m12);
+          part.addForce(f*rot.m01, f*rot.m11, f*rot.m21); 
+        }
+      } 
     }
     Vector3f frc = main.getForce();
     //println(angle + " " + frc.x + " " + frc.y + " " + frc.z);
@@ -155,8 +159,9 @@ class arm {
     for (int i = 1; i < NUM_BOXES; i++ ) {
       JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
       //joint.setDesiredAngularVelocity2(0);
-      if (joint != null) 
+      if (joint != null) { 
         joint.setParam(Ode.dParamVel2, 0);
+      }
     } 
   }
   
@@ -168,7 +173,8 @@ class arm {
     // beginShape();
      
      float[] oldposf = new float[3];
-     main.getPosition(oldposf);
+     //main.getPosition(oldposf);
+     boxes[0].getPosition(oldposf); 
      Vector3f oldpos = new Vector3f(oldposf);
      Matrix3f oldrot = new Matrix3f();
      boxes[0].getRotation(oldrot);
@@ -176,7 +182,7 @@ class arm {
      
      color oldc = color(255.0, 0.0, 0.0 );
      
-    for (int i = 0; i <boxes.length; i++) {
+    for (int i = 1; i <boxes.length; i++) {
       pushMatrix();
      // noStroke();
   
@@ -194,7 +200,10 @@ class arm {
       vertex(posf[0], posf[1], posf[2]);
       float f = ((GeomBox) boxes[i].getGeom()).getLengths()[0]/2;
      
-      drawLimb(rot, oldrot, pos,oldpos, f,oldf,c, oldc);
+      Vector3f[] newEdge = new Vector3f[edge.length];
+      drawLimb(rot, oldrot, pos, oldpos, f, oldf, c, oldc, newEdge);
+      if (i == 1) edge = newEdge;
+      
       oldpos = pos;
       oldrot = rot;
       oldf = f;
@@ -224,23 +233,27 @@ class arm {
     //endShape();
   }
   
-  void drawLimb(Matrix3f rot, Matrix3f oldrot, Vector3f pos, Vector3f oldpos, float f, float oldf, color c, color oldc) {
+  void drawLimb(Matrix3f rot, Matrix3f oldrot, Vector3f pos, Vector3f oldpos,
+                float f, float oldf, color c, color oldc, Vector3f[] edge) {
     
     Vector3f ax = new Vector3f( f*rot.m01, f*rot.m11, f*rot.m21);
     Vector3f ay = new Vector3f( f*rot.m02, f*rot.m12, f*rot.m22);
     Vector3f bx = new Vector3f(oldf*oldrot.m01, oldf*oldrot.m11, oldf*oldrot.m21); 
     Vector3f by = new Vector3f(oldf*oldrot.m02, oldf*oldrot.m12, oldf*oldrot.m22); 
     beginShape(QUAD_STRIP);
-    final int iMax = 50;
-    for (int i = 0; i <= iMax; i++) {
-      float fr = (float)i/(float)iMax;
+    for (int i = 0; i <= edge.length; i++) {
+      float fr = (float)i/(float)edge.length;
       float angle = 2.0*PI*fr;
       float ca = cos(angle);
       float sa = sin(angle);
       Vector3f mixa = new Vector3f(ax.x*ca + ay.x*sa, ax.y*ca + ay.y*sa, ax.z*ca + ay.z*sa);
       Vector3f mixb = new Vector3f(bx.x*ca + by.x*sa, bx.y*ca + by.y*sa, bx.z*ca + by.z*sa);
       //color newc = lerpColor(oldc,c,fr);
+      
+      if (i < edge.length) edge[i] = new Vector3f(oldpos.x + mixb.x, oldpos.y+ mixb.y, oldpos.z + mixb.z); 
+      
       fill(c);
+      
       vertex(pos.x    + mixa.x, pos.y   + mixa.y, pos.z    + mixa.z); 
       fill(oldc);
       vertex(oldpos.x + mixb.x, oldpos.y+ mixb.y, oldpos.z + mixb.z); 
@@ -432,7 +445,7 @@ void setupODE()
   space.addBodyGeoms(main);
   //space.add(terrain);
   
-  arms = new arm[4];
+  arms = new arm[5];
   for (int i = 0; i < arms.length; i++) {
     float angle = PI*0.3 +(float)i/(float)arms.length*2*PI;
     arms[i] = new arm(angle, main, x+10*cos(angle),y,z + 10*sin(angle));  
@@ -515,8 +528,6 @@ void draw() {
     }
     
   }
-
-
   
   for (int i = 0; i < arms.length; i++) {
     arms[i].update(); 
@@ -576,6 +587,49 @@ void draw() {
   for (int i = 0; i < arms.length; i++) {
     arms[i].draw(); 
   }
+  //
+  for (int i = 0; i < arms.length; i++) {
+    fill(250,200,200);
+    noStroke();
+    beginShape(QUAD_STRIP);
+    for (int j = 0; j <= arms[i].edge.length; j++) {
+      Vector3f v1 = arms[i].edge[j%arms[i].edge.length];
+      Vector3f v2 = arms[(i+1)%arms.length].edge[(arms[i].edge.length-j)%arms[i].edge.length];
+      vertex(v1.x,v1.y,v1.z);
+      vertex(v2.x,v2.y,v2.z);
+    }
+    endShape();
+  }
+  
+  if (false) {
+  {beginShape();
+   Vector3f v1 = arms[0].edge[arms[0].edge.length/2];
+   Vector3f v2 = arms[1].edge[arms[1].edge.length/2];
+   Vector3f v3 = arms[2].edge[arms[2].edge.length/2];
+   Vector3f v4 = arms[3].edge[arms[3].edge.length/2];
+   vertex(v1.x,v1.y,v1.z);
+   vertex(v2.x,v2.y,v2.z);
+   vertex(v3.x,v3.y,v3.z);
+   vertex(v4.x,v4.y,v4.z);
+   vertex(v1.x,v1.y,v1.z);
+   endShape();
+  } 
+  {
+   beginShape();
+   Vector3f v1 = arms[0].edge[1];
+   Vector3f v2 = arms[1].edge[1];
+   Vector3f v3 = arms[2].edge[1];
+   Vector3f v4 = arms[3].edge[1];
+   vertex(v1.x,v1.y,v1.z);
+   vertex(v2.x,v2.y,v2.z);
+   vertex(v3.x,v3.y,v3.z);
+   vertex(v4.x,v4.y,v4.z);
+   vertex(v1.x,v1.y,v1.z);
+   endShape();
+  }
+  
+  }
+  
   
   popMatrix();
 }

@@ -191,32 +191,19 @@ void setupODE()
   
   jointGroup = new JointGroup();
   
-
-
-  
   GeomPlane groundGeom = new GeomPlane("plane",0, -1, 0, 0);        
-  
 
   GeomTriMesh terrain = new GeomTriMesh(heights, heights.length/3);
   //GeomTerrain terrain = new GeomTerrain(heights,100, 5);
   
   space = new HashSpace();        
   space.add(groundGeom);
-  
  
   //space.add(terrain);
-  
-  
-  
-  
 
 }
-    
-
-    
-    ////////////////////////////////////////////////
-    
-    
+ 
+////////////////////////////////////////////////
 
 void draw() {
   tme += 0.01;

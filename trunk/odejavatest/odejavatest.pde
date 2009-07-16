@@ -36,7 +36,7 @@ arm[] arms;
 
 class arm {
   final static int NUM_BOXES = 5;
-  final static int NUM_CIRC = 15;
+  final static int NUM_CIRC = 25;
   Body[] boxes;
   
   float angle;
@@ -54,8 +54,8 @@ class arm {
     names = new String[NUM_BOXES];
     boxNames = new String[NUM_BOXES];
     
-    vrt = new Vector3f[NUM_CIRC*NUM_BOXES];
-    snrm = new Vector3f[NUM_CIRC*(NUM_BOXES-1)];
+    vrt  = new Vector3f[NUM_CIRC*NUM_BOXES];
+    snrm = new Vector3f[NUM_CIRC*NUM_BOXES];
     
     float dx = 11;
     float dy = 2;
@@ -234,15 +234,125 @@ class arm {
     
     for (int i = 1; i <boxes.length; i++) {
       fill(255,0,0);
+      //specular(255,255,255);
+      noStroke();
       beginShape(QUAD_STRIP);
       for (int j = 0; j <= NUM_CIRC; j++) { 
         int ind1 = (i-1)*NUM_CIRC+(j%NUM_CIRC);
+        int ind1l = (i-1)*NUM_CIRC+((j-1)%NUM_CIRC);
+        int ind1r = (i-1)*NUM_CIRC+((j+1)%NUM_CIRC);
+        int ind1u = (i-2)*NUM_CIRC+(j%NUM_CIRC);
+        int ind1d = (i)*NUM_CIRC+(j%NUM_CIRC);
+        
         int ind2 = (i)*NUM_CIRC+(j%NUM_CIRC);
+        int ind2l = (i)*NUM_CIRC+((j-1)%NUM_CIRC);
+        int ind2r = (i)*NUM_CIRC+((j+1)%NUM_CIRC);
+        int ind2u = (i-1)*NUM_CIRC+(j%NUM_CIRC);
+        int ind2d = (i+1)*NUM_CIRC+(j%NUM_CIRC);
+        
+        Vector3f n1 = getNormal(ind1,ind1l,ind1r,ind1u, ind1d);
+        Vector3f n2 = getNormal(ind2,ind2l,ind2r,ind1u, ind2d);
+        if(n1 != null) snrm[ind1] = n1;
+        if (n2 != null)snrm[ind2] = n2;
+        
+        if (snrm[ind1] != null) normal(snrm[ind1].x,snrm[ind1].y,snrm[ind1].z);
         vertex(vrt[ind1].x, vrt[ind1].y, vrt[ind1].z);
+        if (snrm[ind2] != null) normal(snrm[ind2].x,snrm[ind2].y,snrm[ind2].z);
         vertex(vrt[ind2].x, vrt[ind2].y, vrt[ind2].z);
       }
       endShape();
     }
+    
+    
+    if (false) {
+    for (int i = 0; i < snrm.length; i++) {
+      stroke(0,255,0);
+      if ((vrt[i] != null) && ( snrm[i] != null)) {
+        //println(snrm[i].x + " " + snrm[i].y + " " + snrm[i].z);
+        float sc = 4;
+       line(vrt[i].x, vrt[i].y, vrt[i].z, 
+            vrt[i].x + sc*snrm[i].x, vrt[i].y + sc*snrm[i].y, vrt[i].z + sc*snrm[i].z);
+      }
+    }
+    }
+    
+  }
+  
+  
+  
+  Vector3f getNormal(int ind1, int ind1l, int ind1r, int ind1u, int ind1d) {
+    Vector3f rv = new Vector3f();
+    
+
+    if ((ind1 < 0) || (ind1 >= vrt.length)) {
+        return null;
+    } 
+    if ((ind1l < 0) || (ind1l >= vrt.length)) {
+        return null;
+    } 
+    if ((ind1r < 0) || (ind1r >= vrt.length)) {
+        return null;
+    } 
+    if ((ind1u < 0) || (ind1u >= vrt.length)) {
+        return null;
+    } 
+    if ((ind1d < 0) || (ind1d >= vrt.length)) {
+        return null;
+    } 
+    
+         Vector3f v1 = vrt[ind1];
+         Vector3f vl = vrt[ind1l];
+         Vector3f vr = vrt[ind1r];
+         Vector3f vu = vrt[ind1u];
+         Vector3f vd = vrt[ind1d];
+         
+         Vector3f nl = new Vector3f(v1);
+         Vector3f nr = new Vector3f(v1);
+         Vector3f nu = new Vector3f(v1);
+         Vector3f nd = new Vector3f(v1);     
+         nl.sub(vl);
+         nr.sub(vr);
+         nu.sub(vu);
+         nd.sub(vd);
+         
+         
+         Vector3f nrm1 = getNorm(nl,nu);
+         Vector3f nrm2 = getNorm(nu,nr);
+         Vector3f nrm3 = getNorm(nr,nd);
+         Vector3f nrm4 = getNorm(nd,nl);
+         
+         /*
+         Vector3f nrm1 = getNorm(nu,nl);
+         Vector3f nrm2 = getNorm(nr,nu);
+         Vector3f nrm3 = getNorm(nd,nr);
+         Vector3f nrm4 = getNorm(nl,nd);
+         */
+         
+         /*
+         println("face 1 " + nrm1.x + " " + nrm1.y + " " + nrm1.z);
+         println("face 2 " + nrm2.x + " " + nrm2.y + " " + nrm2.z);
+         println("face 3 " + nrm3.x + " " + nrm3.y + " " + nrm3.z);
+         println("face 4 " + nrm4.x + " " + nrm4.y + " " + nrm4.z);
+         */
+         
+         
+         nrm1.add(nrm2);
+         nrm1.add(nrm3);
+         nrm1.add(nrm4);
+         nrm1.normalize();
+ 
+         return nrm1;
+   
+  }
+  
+  Vector3f getNorm(Vector3f v1, Vector3f v2) {
+    Vector3f rv = new Vector3f();
+    
+    rv.cross(v1,v2);
+    rv.normalize();
+
+    
+    return rv;
   }
   
   /// get vector positiosn
@@ -553,9 +663,7 @@ void draw() {
         if (iter.hasNext()) {
             joint = (JointHinge2) iter.next();
             */
-            
 
-  
   collision.applyContacts();
   world.step();
 
@@ -568,7 +676,10 @@ void draw() {
   translate(width/2,3*height/4+yoff,zoff);
   
   rotateY(angle);
+  //lightSpecular(100,100,100);//,-1.0,0.4,0);
+  //shininess(2.9);
    directionalLight(255,255,180,1,0.4,0 );
+   
   if (bombEnable) {
    sphere(bombSize);
      space.remove(bomb);
@@ -603,8 +714,10 @@ void draw() {
     arms[i].draw(); 
   }
   //
+  
+  if (true) {
   for (int i = 0; i < arms.length; i++) {
-    fill(250,200,200);
+    fill(255,0,0);
     noStroke();
     beginShape(QUAD_STRIP);
     for (int j = 0; j <= arm.NUM_CIRC; j++) {
@@ -615,7 +728,7 @@ void draw() {
     }
     endShape();
   }
-  
+  }
   /*
   
   if (false) {

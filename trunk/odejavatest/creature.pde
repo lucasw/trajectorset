@@ -58,7 +58,7 @@ void draw() {
   
   if (true) {
   for (int i = 0; i < arms.length; i++) {
-    fill(255,0,0);
+    fill(0,0,255);
     noStroke();
     beginShape(QUAD_STRIP);
     for (int j = 0; j <= arm.NUM_CIRC; j++) {
@@ -116,6 +116,7 @@ class arm {
   Vector3f[] vrt;
   /// surface norms
   Vector3f[] snrm;  
+  color[] cols;
   
   arm(float angle, Body main, float x, float y, float z) {
     this.angle = angle;
@@ -125,6 +126,7 @@ class arm {
     
     vrt  = new Vector3f[NUM_CIRC*NUM_BOXES];
     snrm = new Vector3f[NUM_CIRC*NUM_BOXES];
+    cols = new color[NUM_CIRC*NUM_BOXES];
     
     float dx = 11;
     float dy = 2;
@@ -325,8 +327,10 @@ class arm {
         if (n2 != null)snrm[ind2] = n2;
         
         if (snrm[ind1] != null) normal(snrm[ind1].x,snrm[ind1].y,snrm[ind1].z);
+        fill(cols[ind1]);
         vertex(vrt[ind1].x, vrt[ind1].y, vrt[ind1].z);
         if (snrm[ind2] != null) normal(snrm[ind2].x,snrm[ind2].y,snrm[ind2].z);
+        fill(cols[ind2]);
         vertex(vrt[ind2].x, vrt[ind2].y, vrt[ind2].z);
       }
       endShape();
@@ -445,8 +449,9 @@ class arm {
       //Vector3f mixb = new Vector3f(bx.x*ca + by.x*sa, bx.y*ca + by.y*sa, bx.z*ca + by.z*sa);
       //color newc = lerpColor(oldc,c,fr);
       
-      vrt[ind*NUM_CIRC+i] = new Vector3f(pos.x + mixa.x, pos.y + mixa.y, pos.z + mixa.z);  
+      vrt[ind*NUM_CIRC+i]  = new Vector3f(pos.x + mixa.x, pos.y + mixa.y, pos.z + mixa.z);  
       
+      cols[ind*NUM_CIRC+i] = color(0,0,255.0-255.0*(float)ind/(float)NUM_BOXES);
       // fill(c);
       //vertex(pos.x    + mixa.x, pos.y   + mixa.y, pos.z    + mixa.z); 
       //fill(oldc);

@@ -58,7 +58,7 @@ void draw() {
   
   if (true) {
   for (int i = 0; i < arms.length; i++) {
-    fill(0,0,255);
+    fill(100,100,255);
     noStroke();
     beginShape(QUAD_STRIP);
     for (int j = 0; j <= arm.NUM_CIRC; j++) {
@@ -171,7 +171,7 @@ class arm {
         jh.setAxis1(-ay,0,az);
         
         jh.setAxis2(az,0,ay);
-        println(names[i] + " " + ay + " " + az);
+        //println(names[i] + " " + ay + " " + az);
       
         jh.setParam(Ode.dParamLoStop,  -PI/4);
         jh.setParam(Ode.dParamHiStop,  PI/4);
@@ -229,7 +229,7 @@ class arm {
     
     if (velf > 0.4) velf = 0.3;
     if (velf < 0) velf = 0;
-    println(mvel + "  " + velf);
+    //println(mvel + "  " + velf);
   
     for (int i = 1; i < NUM_BOXES; i++ ) {
       JointUniversal joint = (JointUniversal)jointGroup.getJoint("hinge" + i);
@@ -451,7 +451,9 @@ class arm {
       
       vrt[ind*NUM_CIRC+i]  = new Vector3f(pos.x + mixa.x, pos.y + mixa.y, pos.z + mixa.z);  
       
-      cols[ind*NUM_CIRC+i] = color(0,0,255.0-255.0*(float)ind/(float)NUM_BOXES);
+      color c1 = color(100,100,255);
+      color c2 = color(255,255,255);
+      cols[ind*NUM_CIRC+i] = lerpColor(c1,c2, (float)ind/(float)NUM_BOXES);
       // fill(c);
       //vertex(pos.x    + mixa.x, pos.y   + mixa.y, pos.z    + mixa.z); 
       //fill(oldc);

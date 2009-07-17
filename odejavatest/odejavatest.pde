@@ -21,7 +21,11 @@ import org.odejava.collision.*;
 import org.odejava.ode.*;
 import javax.vecmath.*;
 
+boolean doSave= false;
+
 float angle;
+
+float now;
 
 World world;
 HashSpace space;
@@ -40,9 +44,18 @@ float[] indices;
  
  float tme = 0;
  
+int count = 0;
+int rollCount = 0;
+
+
+ /// 30 fps * 60 seconds = 1800 frames max
+ final static int COUNT_MAX = 30*6;
+ 
 void setup() {
    size(500,500,P3D); 
    frameRate(50);
+   
+   now = millis();
    
   heights =  new float[wd*wd*18]; /// wd*wd*3*2 vertices, each made of 3 floats
 
@@ -191,13 +204,13 @@ void setupODE()
   
   jointGroup = new JointGroup();
   
-  GeomPlane groundGeom = new GeomPlane("plane",0, -1, 0, 0);        
+ // GeomPlane groundGeom = new GeomPlane("plane",0, -1, 0, 0);        
 
-  GeomTriMesh terrain = new GeomTriMesh(heights, heights.length/3);
+  //GeomTriMesh terrain = new GeomTriMesh(heights, heights.length/3);
   //GeomTerrain terrain = new GeomTerrain(heights,100, 5);
   
   space = new HashSpace();        
-  space.add(groundGeom);
+ // space.add(groundGeom);
  
   //space.add(terrain);
 
@@ -287,14 +300,14 @@ void draw() {
   pushMatrix();
   //lights();
  
-  ambientLight(80,80,80);
+  ambientLight(20,20,20);
   translate(width/2,3*height/4+yoff,zoff);
   
   rotateY(angle);
   //lightSpecular(100,100,100);//,-1.0,0.4,0);
   //shininess(2.9);
-   directionalLight(255,255,180,1,0.4,0 );
-   
+   directionalLight(155,155,215,1,0.4,0 );
+   pointLight(185,95,55,0,0,0 );
   if (bombEnable) {
    sphere(bombSize);
      space.remove(bomb);
@@ -302,13 +315,63 @@ void draw() {
   }
   
   //draw ground
-  drawGrid();
+  //drawGrid();
   //drawGround();
   
   theCreature.draw();
   
   
   popMatrix();
+  
+  if (doSave) {
+  print(millis()-now + " ");
+  /// capture zbuffer
+  PGraphics3D p3 = (PGraphics3D) g;
+  
+  /*
+  /// this is really slow
+  String path = savePath("zbuffer_" + count);
+  FileOutputStream fos;
+  try {
+    fos = new FileOutputStream(path);
+      DataOutputStream dos = new DataOutputStream(fos);
+  for (int i = 0; i < p3.zbuffer.length; i++) {
+   
+    dos.writeFloat(p3.zbuffer[i]); 
+  }
+  fos.close();
+  } catch (IOException e) {
+    println(e);
+  }
+  */
+  
+
+  String binfilename = "zbuffer_" + count + ".bin";
+  byte[] loadedBin = loadBytes(binfilename);
+  
+  byte[] txb = new byte[p3.zbuffer.length*4]; 
+  for (int i = 0; i < p3.zbuffer.length; i++) {
+    int bits = Float.floatToIntBits(p3.zbuffer[i]);
+    txb[i*4+0] = (byte) ((bits >> 0)  & 0xff);
+    txb[i*4+1] = (byte) ((bits >> 8)  & 0xff);
+    txb[i*4+2] = (byte) ((bits >> 16) & 0xff);
+    txb[i*4+3] = (byte) ((bits >> 24) & 0xff);
+  }
+  
+  print(millis()-now + " ");
+  saveBytes(binfilename, txb);
+  print(millis()-now + "\n");
+
+  saveFrame("image_" + count + ".png");
+  }
+  
+  count++;
+  
+  if (count > COUNT_MAX) {
+    count = 0; 
+    rollCount++;
+    println("rollover " + rollCount);
+  }
 }
 
 

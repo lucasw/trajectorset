@@ -21,7 +21,9 @@ import org.odejava.collision.*;
 import org.odejava.ode.*;
 import javax.vecmath.*;
 
-boolean doSave = false;
+boolean doSave = true;
+ /// 30 fps * 60 seconds = 1800 frames max
+ final static int COUNT_MAX = 220;
 
 float angle;
 
@@ -48,11 +50,10 @@ int count = 0;
 int rollCount = 0;
 
 
- /// 30 fps * 60 seconds = 1800 frames max
- final static int COUNT_MAX = 30;
+
  
 void setup() {
-   size(100,100,P3D); 
+   size(150,150,P3D); 
    frameRate(50);
    
    now = millis();
@@ -108,11 +109,18 @@ void setup() {
     //int ind = (i*wd+j)*3;
   }}*/
   
-   setupODE();
+  initStuff();
+}
+
+void initStuff() {
+     setupODE();
    
    bomb = new GeomSphere("bomb",bombSize);
    
    theCreature = new creature(5);
+   tme = 0;
+   
+   noiseSeed(rollCount);
 }
 
 float zoff = -100;
@@ -353,7 +361,7 @@ void draw() {
   float[] binZbuffer = new float[p3.zbuffer.length];
      
   if ((loadedBin == null) || (loadedImg == null) || (rollCount == 0)) {
-    println("first pass " + count); 
+   // println("first pass " + count); 
     binZbuffer = p3.zbuffer;
   } else {   
     loadPixels();
@@ -412,6 +420,8 @@ void draw() {
     count = 0; 
     rollCount++;
     println("rollover " + rollCount);
+    cleanupOde();
+    initStuff();
   }
 }
 

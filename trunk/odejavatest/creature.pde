@@ -202,7 +202,7 @@ class arm {
     int iMax = int(NUM_BOXES);
     for (int i = 0; i < iMax; i++ ) {
       float fr = 1.0-(float)i/(float)iMax;
-      float mix = 0.65;
+      float mix = 0.85;
       float vel = velf*(mix*sin(tme*4) + (1.0-mix)*(noise(tme+i*1000+angle*1000)-0.5)) ;  
       //if (vel > 0) vel*=2;
       JointUniversal joint = (JointUniversal)jointGroup.getJoint(names[i]);
@@ -228,8 +228,8 @@ class arm {
     
     float mvel = main.getLinearVel().y;
     
-    if (mvel < 0) velf -= (0.0002*noise(tme+1000))*abs(mvel);
-    if (mvel > 0) velf += (0.0002*noise(tme+2000))*abs(mvel);
+    if (mvel < 0) velf -= (0.0001 + 0.0001*noise(tme+1000))*abs(mvel);
+    if (mvel > 0) velf += (0.0001 + 0.0001*noise(tme+2000))*abs(mvel);
     
     if (velf > 0.4) velf = 0.3;
     if (velf < 0) velf = 0;

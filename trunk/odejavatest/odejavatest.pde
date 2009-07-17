@@ -53,7 +53,7 @@ int rollCount = 0;
 
  
 void setup() {
-   size(1280,720,P3D); 
+   size(640,480,P3D); 
    frameRate(50);
    
    now = millis();

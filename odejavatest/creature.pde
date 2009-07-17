@@ -118,6 +118,10 @@ class arm {
   Vector3f[] snrm;  
   color[] cols;
   
+  void reset() {
+    
+  }
+  
   arm(float angle, Body main, float x, float y, float z) {
     this.angle = angle;
     boxes = new Body[NUM_BOXES];
@@ -146,7 +150,7 @@ class arm {
       
       String postfix = (int)(angle/PI*180.0)+ "_" + i;
       boxNames[i] = "box_" + postfix;
-      boxes[i] = new Body(boxNames[i],world, new GeomBox(sz*0.99,sz*0.99,sz*0.99));
+      boxes[i] = new Body(boxNames[i], world, new GeomBox(sz*0.99,sz*0.99,sz*0.99));
       boxes[i].adjustMass(0.8*fr);    
       boxes[i].setPosition(px, py, pz);
       boxes[i].setQuaternion(new Quat4f(0,sin(-angle/2),0,cos(-angle/2)));

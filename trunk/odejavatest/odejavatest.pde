@@ -21,9 +21,9 @@ import org.odejava.collision.*;
 import org.odejava.ode.*;
 import javax.vecmath.*;
 
-boolean doSave = true;
+boolean doSave = false;
  /// 30 fps * 60 seconds = 1800 frames max
- final static int COUNT_MAX = 220;
+ final static int COUNT_MAX = 2000;
 
 float angle;
 
@@ -53,7 +53,7 @@ int rollCount = 0;
 
  
 void setup() {
-   size(150,150,P3D); 
+   size(1280,720,P3D); 
    frameRate(50);
    
    now = millis();

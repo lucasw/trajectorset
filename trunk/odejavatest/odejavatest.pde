@@ -21,7 +21,7 @@ import org.odejava.collision.*;
 import org.odejava.ode.*;
 import javax.vecmath.*;
 
-boolean doSave= false;
+boolean doSave = true;
 
 float angle;
 
@@ -49,10 +49,10 @@ int rollCount = 0;
 
 
  /// 30 fps * 60 seconds = 1800 frames max
- final static int COUNT_MAX = 30*6;
+ final static int COUNT_MAX = 30;
  
 void setup() {
-   size(500,500,P3D); 
+   size(100,100,P3D); 
    frameRate(50);
    
    now = millis();
@@ -306,8 +306,8 @@ void draw() {
   rotateY(angle);
   //lightSpecular(100,100,100);//,-1.0,0.4,0);
   //shininess(2.9);
-   directionalLight(155,155,215,1,0.4,0 );
-   pointLight(185,95,55,0,0,0 );
+   directionalLight(155,155,255,1,0.4,0 );
+   pointLight(255,95,55,0,0,0 );
   if (bombEnable) {
    sphere(bombSize);
      space.remove(bomb);
@@ -324,7 +324,7 @@ void draw() {
   popMatrix();
   
   if (doSave) {
-  print(millis()-now + " ");
+  //print(millis()-now + " ");
   /// capture zbuffer
   PGraphics3D p3 = (PGraphics3D) g;
   
@@ -345,25 +345,66 @@ void draw() {
   }
   */
   
-
-  String binfilename = "zbuffer_" + count + ".bin";
+  String binfilename = "data/zbuffer_" + count + ".bin";
+  String imgfilename = "data/image_" + count + ".png";
   byte[] loadedBin = loadBytes(binfilename);
+  PImage loadedImg = loadImage(imgfilename);
   
-  byte[] txb = new byte[p3.zbuffer.length*4]; 
-  for (int i = 0; i < p3.zbuffer.length; i++) {
-    int bits = Float.floatToIntBits(p3.zbuffer[i]);
-    txb[i*4+0] = (byte) ((bits >> 0)  & 0xff);
-    txb[i*4+1] = (byte) ((bits >> 8)  & 0xff);
-    txb[i*4+2] = (byte) ((bits >> 16) & 0xff);
-    txb[i*4+3] = (byte) ((bits >> 24) & 0xff);
-  }
+  float[] binZbuffer = new float[p3.zbuffer.length];
+     
+  if ((loadedBin == null) || (loadedImg == null)) {
+    println("first pass " + count); 
+    binZbuffer = p3.zbuffer;
+  } else {   
+    loadPixels();
+     /// aggregate
+     /// TBD could we manipulate zbuffer before drawing, and skip
+     /// this manual step?
   
-  print(millis()-now + " ");
-  saveBytes(binfilename, txb);
-  print(millis()-now + "\n");
-
-  saveFrame("image_" + count + ".png");
-  }
+     for (int i = 0; i < loadedBin.length; i += 4) {
+       int accum =  ((loadedBin[i+3]&0xff) << 24) | 
+                    ((loadedBin[i+2]&0xff) << 16) | 
+                    ((loadedBin[i+1]&0xff) << 8) | 
+                     (loadedBin[i+0]&0xff);
+    
+       //int accum = ((b[i]&0xff <<24) | (b[i+1]<<16) | (b[i+2]<<8) | b[i+3];
+  
+       //aZbuffer[i/4] 
+      
+       int zind = i/4;
+       binZbuffer[zind] = Float.intBitsToFloat(accum);
+       if (binZbuffer[zind] > p3.zbuffer[zind]) {
+         // the current pixel value is in front. update the aggregate
+         binZbuffer[zind] = p3.zbuffer[zind]; 
+       } else {
+         /// the aggregate value is in front
+         pixels[zind] = loadedImg.pixels[zind];
+       } 
+      } // for loadedbin
+    updatePixels();
+    
+    }  /// loaded bin and img 
+      
+    /// now save new aggregate zbuffer
+    byte[] txb = new byte[binZbuffer.length*4]; 
+    for (int i = 0; i < binZbuffer.length; i++) {
+      int bits = Float.floatToIntBits(binZbuffer[i]);
+      txb[i*4+0] = (byte) ((bits >> 0)  & 0xff);
+      txb[i*4+1] = (byte) ((bits >> 8)  & 0xff);
+      txb[i*4+2] = (byte) ((bits >> 16) & 0xff);
+      txb[i*4+3] = (byte) ((bits >> 24) & 0xff);
+    }
+    
+    //print(millis()-now + " ");
+    saveBytes(binfilename, txb);
+    //print(millis()-now + "\n");
+    
+    try {
+      saveFrame(imgfilename);
+    } catch (FileNotFoundException e) {
+       println(e); 
+    }
+  } /// doSave
   
   count++;
   

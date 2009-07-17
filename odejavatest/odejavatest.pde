@@ -21,7 +21,7 @@ import org.odejava.collision.*;
 import org.odejava.ode.*;
 import javax.vecmath.*;
 
-boolean doSave = true;
+boolean doSave = false;
 
 float angle;
 
@@ -115,8 +115,8 @@ void setup() {
    theCreature = new creature(5);
 }
 
-float zoff;
-float yoff=10;
+float zoff = -100;
+float yoff=200;
 
 void drawGround() {
   pushMatrix();
@@ -301,7 +301,7 @@ void draw() {
   //lights();
  
   ambientLight(20,20,20);
-  translate(width/2,3*height/4+yoff,zoff);
+  translate(width/2,height/2+yoff,zoff);
   
   rotateY(angle);
   //lightSpecular(100,100,100);//,-1.0,0.4,0);
@@ -352,7 +352,7 @@ void draw() {
   
   float[] binZbuffer = new float[p3.zbuffer.length];
      
-  if ((loadedBin == null) || (loadedImg == null)) {
+  if ((loadedBin == null) || (loadedImg == null) || (rollCount == 0)) {
     println("first pass " + count); 
     binZbuffer = p3.zbuffer;
   } else {   
@@ -399,11 +399,11 @@ void draw() {
     saveBytes(binfilename, txb);
     //print(millis()-now + "\n");
     
-    try {
+    //try {
       saveFrame(imgfilename);
-    } catch (FileNotFoundException e) {
-       println(e); 
-    }
+    ///} catch (FileNotFoundException e) {
+     //  println(e); 
+    //}
   } /// doSave
   
   count++;

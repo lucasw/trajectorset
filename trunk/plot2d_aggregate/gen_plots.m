@@ -15,18 +15,26 @@ tmax = 200;
     veh.y = zeros(1,tmax);
     veh.vx = zeros(1,tmax);
     veh.vy = zeros(1,tmax);
+    veh.ax = zeros(1,tmax);
+    veh.ay = zeros(1,tmax);
+    veh.theta = zeros(1,tmax);
+    veh.thetadot = zeros(1,tmax);
     
     veh.x(1) = width/2;
     veh.y(1) = 0;
  
     veh.vx(1) = 0;
-    veh.vy(1) = 0.4;
+    veh.vy(1) = 0;
     
     for t = [2:tmax]
-        veh.vy(t) = veh.vy(t-1);
+        
+        veh.ax(t) = 0;
+        veh.ay(t) = 0.0025;
+        
+        veh.vy(t) = veh.vy(t-1) + veh.ay(t);
         veh.vy(t) = veh.vy(t) + interp2(windy,veh.x(t-1),veh.y(t-1),'linear',0);
 
-        veh.vx(t) = veh.vx(t-1);
+        veh.vx(t) = veh.vx(t-1) + veh.ax(t);
         veh.vx(t) = veh.vx(t) + interp2(windx,veh.x(t-1),veh.y(t-1),'linear',0);
 
         
@@ -68,8 +76,10 @@ tmax = 200;
     figure(2),
     subplot(2,1,1);
     plot(veh.time, veh.vx);
+    title('vx');
     subplot(2,1,2);
     plot(veh.time, veh.vy);
+    title('vy');
 %     subplot(2,1,2);
 %     mesh(noise);
 

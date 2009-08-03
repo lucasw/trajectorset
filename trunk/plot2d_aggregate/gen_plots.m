@@ -11,7 +11,7 @@ ty = 70;
 
 max_tdot = pi/20;
 
-%for i = [1:100]
+for i = [1:100]
     % generate a 2d wind landscape
     % > 0 means winds to east (or +x)
     % < 0 means winds to west (or -x)
@@ -109,44 +109,43 @@ max_tdot = pi/20;
     image(windy,'CDataMapping','scaled');
     colorbar;
     subplot(3,1,3);
+    hold on;
     plot(veh.x, veh.y);
     
     figure(2),
-        subplot(4,1,1);
+    subplot(4,1,1);
+    hold on;
     plot(veh.time, veh.x);
     title('x');
     subplot(4,1,2);
+    hold on;
     plot(veh.time, veh.y);
     title('y');
     subplot(4,1,3);
+    hold on;
     plot(veh.time, veh.vx);
     title('vx');
     subplot(4,1,4);
+    hold on;
     plot(veh.time, veh.vy);
     title('vy');
     
         figure(3),
-        subplot(4,1,1);
+        subplot(2,1,1);
+        hold on;
     plot(veh.time, veh.theta,veh.time, veh.theta_target);
     title('theta rad');
-    subplot(4,1,2);
+    subplot(2,1,2);
+    hold on;
     plot(veh.time, veh.thetadot);
     title('thetadot rad/s');
-    subplot(4,1,3);
-    plot(veh.time, veh.theta_target2);
-    title('theta target');
-    subplot(4,1,4);
-    plot(veh.time, veh.vy);
-    title('vy');
-%     subplot(2,1,2);
+;
 %     mesh(noise);
-
-    
     
     
     xlabel('test');
     
-%end
+end
 
 
 %%

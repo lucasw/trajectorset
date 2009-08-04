@@ -1,6 +1,6 @@
 function veh = gen_plots()
 
-rand('twister',2);
+
 
 width = 100;
 tmax = 450;
@@ -11,93 +11,94 @@ ty = 70;
 
 max_tdot = pi/20;
 
-for i = [1:100]
+for i = [0:99]
+    rand('twister',i);
     % generate a 2d wind landscape
     % > 0 means winds to east (or +x)
     % < 0 means winds to west (or -x)
     windx = 0.004*(perlin(width,8) -0.5);
     windy = 0.002*(perlin(width,8) -0.5);
     
-    veh.x = zeros(1,tmax);
-    veh.y = zeros(1,tmax);
-    veh.vx = zeros(1,tmax);
-    veh.vy = zeros(1,tmax);
-    veh.ax = zeros(1,tmax);
-    veh.ay = zeros(1,tmax);
-    veh.theta = zeros(1,tmax);
-    veh.thetadot = zeros(1,tmax);
-    veh.theta_target = zeros(1,tmax);
-    veh.theta_target2 = zeros(1,tmax);
+    veh_x = zeros(1,tmax);
+    veh_y = zeros(1,tmax);
+    veh_vx = zeros(1,tmax);
+    veh_vy = zeros(1,tmax);
+    veh_ax = zeros(1,tmax);
+    veh_ay = zeros(1,tmax);
+    veh_theta = zeros(1,tmax);
+    veh_thetadot = zeros(1,tmax);
+    veh_theta_target = zeros(1,tmax);
+    veh_theta_target2 = zeros(1,tmax);
     
-    veh.x(1) = width/2;
-    veh.y(1) = 0;
+    veh_x(1) = width/2;
+    veh_y(1) = 0;
  
-    veh.vx(1) = 0;
-    veh.vy(1) = 0;
+    veh_vx(1) = 0;
+    veh_vy(1) = 0;
     
 
   
     for t = [2:tmax]
         
-        dx = tx-veh.x(t-1);
-        dy = ty-veh.y(t-1);
+        dx = tx-veh_x(t-1);
+        dy = ty-veh_y(t-1);
         dist = sqrt(dx*dx+dy*dy);
         
-        veh.theta_target(t) = atan2( dx,dy );
-        veh.theta_target(1:t) = unwrap(veh.theta_target(1:t));
+        veh_theta_target(t) = atan2( dx,dy );
+        veh_theta_target(1:t) = unwrap(veh_theta_target(1:t));
         
-        veh.theta_target2(t) = atan2(veh.vx(t-1),veh.vy(t-1));
-        veh.theta_target2(1:t) = unwrap(veh.theta_target2(1:t));
+        veh_theta_target2(t) = atan2(veh_vx(t-1),veh_vy(t-1));
+        veh_theta_target2(1:t) = unwrap(veh_theta_target2(1:t));
         
-        veh.thetadot(t) = 0.1*(veh.theta_target(t) - veh.theta(t-1) - 0.3*veh.theta_target2(t));
+        veh_thetadot(t) = 0.1*(veh_theta_target(t) - veh_theta(t-1) - 0.3*veh_theta_target2(t));
            
-        if (veh.thetadot(t) > max_tdot)
-            veh.thetadot(t) = max_tdot;
-        elseif (veh.thetadot(t) < -max_tdot)
-            veh.thetadot(t) = -max_tdot;
+        if (veh_thetadot(t) > max_tdot)
+            veh_thetadot(t) = max_tdot;
+        elseif (veh_thetadot(t) < -max_tdot)
+            veh_thetadot(t) = -max_tdot;
         end
         
-        veh.theta(t) = veh.theta(t-1) + veh.thetadot(t);
+        veh_theta(t) = veh_theta(t-1) + veh_thetadot(t);
         
-%         if (veh.theta(t) > pi) 
-%             veh.theta(t) = veh.theta(t)-2*pi;
-%         elseif (veh.theta(t) < -pi)
-%             veh.theta(t) = veh.theta(t)+2*pi;
+%         if (veh_theta(t) > pi) 
+%             veh_theta(t) = veh_theta(t)-2*pi;
+%         elseif (veh_theta(t) < -pi)
+%             veh_theta(t) = veh_theta(t)+2*pi;
 %         end
             
         real_acc = acc*(0.6 + 0.4*dist/width);
-        veh.ax(t) = sin(veh.theta(t))*real_acc;
-        veh.ay(t) = cos(veh.theta(t))*real_acc + gravity;
+        veh_ax(t) = sin(veh_theta(t))*real_acc;
+        veh_ay(t) = cos(veh_theta(t))*real_acc + gravity;
         
-        veh.vy(t) = veh.vy(t-1) + veh.ay(t);
-        veh.vy(t) = veh.vy(t) + interp2(windy,veh.x(t-1),veh.y(t-1),'linear',0);
+        veh_vy(t) = veh_vy(t-1) + veh_ay(t);
+        veh_vy(t) = veh_vy(t) + interp2(windy,veh_x(t-1),veh_y(t-1),'linear',0);
 
-        veh.vx(t) = veh.vx(t-1) + veh.ax(t);
-        veh.vx(t) = veh.vx(t) + interp2(windx,veh.x(t-1),veh.y(t-1),'linear',0);
+        veh_vx(t) = veh_vx(t-1) + veh_ax(t);
+        veh_vx(t) = veh_vx(t) + interp2(windx,veh_x(t-1),veh_y(t-1),'linear',0);
 
         
-        veh.x(t) = veh.x(t-1) + veh.vx(t);
-        veh.y(t) = veh.y(t-1) + veh.vy(t);
+        veh_x(t) = veh_x(t-1) + veh_vx(t);
+        veh_y(t) = veh_y(t-1) + veh_vy(t);
         
-        if veh.x(t) > width
-            veh.x(t) = veh.x(t) -width;
+        if veh_x(t) > width
+            veh_x(t) = veh_x(t) -width;
         end
         
-        if (veh.x(t) < 0)
-           veh.x(t) = veh.x(t) + width;
+        if (veh_x(t) < 0)
+           veh_x(t) = veh_x(t) + width;
         end
         
-%         if veh.y(t) > width
-%             veh.y(t) = veh.y(t) -width;
+%         if veh_y(t) > width
+%             veh_y(t) = veh_y(t) -width;
 %         end
         
-        if (veh.y(t) < 0)
-           veh.y(t) = 0; % veh.y(t) + width;
+        if (veh_y(t) < 0)
+           veh_y(t) = 0; % veh_y(t) + width;
         end
         
     end
     
-    veh.time = [1:tmax];
+    veh_time = [1:tmax];
     
     figure(1);
     subplot(3,1,1);
@@ -110,37 +111,45 @@ for i = [1:100]
     colorbar;
     subplot(3,1,3);
     hold on;
-    plot(veh.x, veh.y);
+    plot(veh_x, veh_y);
     
     figure(2),
     subplot(4,1,1);
     hold on;
-    plot(veh.time, veh.x);
+    plot(veh_time, veh_x);
     title('x');
     subplot(4,1,2);
     hold on;
-    plot(veh.time, veh.y);
+    plot(veh_time, veh_y);
     title('y');
     subplot(4,1,3);
     hold on;
-    plot(veh.time, veh.vx);
+    plot(veh_time, veh_vx);
     title('vx');
     subplot(4,1,4);
     hold on;
-    plot(veh.time, veh.vy);
+    plot(veh_time, veh_vy);
     title('vy');
     
         figure(3),
         subplot(2,1,1);
         hold on;
-    plot(veh.time, veh.theta,veh.time, veh.theta_target);
+    plot(veh_time, veh_theta,veh_time, veh_theta_target);
     title('theta rad');
     subplot(2,1,2);
     hold on;
-    plot(veh.time, veh.thetadot);
+    plot(veh_time, veh_thetadot);
     title('thetadot rad/s');
-;
-%     mesh(noise);
+  
+    
+    pre = ['data' num2str(i+1e7) filesep]
+    mkdir(pre);
+    % save to mat files
+    save([pre 'veh_time'], 'veh_time');
+    save([pre 'veh_x' ],'veh_x'); 
+    save([pre 'veh_y' ],'veh_y');
+    save([pre 'veh_theta' ],'veh_theta');
+    %     mesh(noise);
     
     
     xlabel('test');

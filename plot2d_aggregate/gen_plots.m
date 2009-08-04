@@ -1,6 +1,6 @@
 function veh = gen_plots()
 
-
+do_plot = 0;
 
 width = 100;
 tmax = 450;
@@ -11,7 +11,7 @@ ty = 70;
 
 max_tdot = pi/20;
 
-for i = [0:99]
+for i = [100:999]
     rand('twister',i);
     % generate a 2d wind landscape
     % > 0 means winds to east (or +x)
@@ -100,6 +100,8 @@ for i = [0:99]
     
     veh_time = [1:tmax];
     
+    
+    if (do_plot) 
     figure(1);
     subplot(3,1,1);
     caxis([min(min(windx)) max(max(windx))]);
@@ -140,7 +142,8 @@ for i = [0:99]
     hold on;
     plot(veh_time, veh_thetadot);
     title('thetadot rad/s');
-  
+    end;
+    
     
     pre = ['data' num2str(i+1e7) filesep]
     mkdir(pre);

@@ -105,10 +105,10 @@ void draw() {
     data[i+0] = (byte) ((bits >> 0)  & 0xff);
     
     /// now update the pixel for display
-    pixels[zind] = color(newData[zind]/numAgg*255.0, 
-                        
-                         newData[zind]/((float)numAgg/32.0)*255.0,
-                          newData[zind] >0 ? 100 :0);
+    float fr = newData[zind]/(float)numAgg;
+    pixels[zind] = color(fr*128.0*255.0,
+                         fr*32.0*255.0, 
+                         fr*128.0 + ((fr >0) ? 127.0 :0) );
     
   }
   updatePixels();

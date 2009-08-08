@@ -3,6 +3,8 @@ import com.jmatio.types.*;
 
 String names[];
 
+PFont font;
+
 // TBD load these from config file
 void setup() {
 size(500,500);
@@ -10,6 +12,9 @@ size(500,500);
 
 String dir = sketchPath + "/data";
 File file = new File(dir);
+
+font = createFont("Serif.bold",24);
+textFont(font);
 
   names = file.list();
   
@@ -48,7 +53,7 @@ void draw() {
     background(0);
   
   //TBD get array of a name  from file
-  String matname = "veh_y";
+  String matname = "veh_x";
   MatFileReader mfr = null;
   try {
     mfr = new MatFileReader(sketchPath + "/data/" + names[i] + "/" + matname + ".mat" );
@@ -82,7 +87,7 @@ void draw() {
   println(i + " " + names.length + " " + matdata.length +" " + 
                 matdata[0].length + " "  + matdata[0][0]);
                 */
-   println("numAgg " + numAgg);
+  // println("numAgg " + numAgg);
   
   drawPlot(matdata,1);
   
@@ -120,7 +125,9 @@ void draw() {
   saveBytes(matname + ".dat", data);
   
     /// draw the latest data again to highlight it
-  drawPlot(matdata,2);
+  
+  drawPlot(matdata,3);
+  text(i, width-150,50);
   }
   
 

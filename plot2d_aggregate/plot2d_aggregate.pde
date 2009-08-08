@@ -23,14 +23,32 @@ float ymax = 100;
 
 int i = 0;
 
+//////////////////////////////////////////////////////////////////////////
 
+void drawPlot(double[][] matdata, float weight) {
+  float datamax = matdata[0].length;
+  //smooth();
+  noFill();
+  stroke(255,255,255);
+  beginShape();
+  strokeWeight(weight);
+  for (int j = 1; j < matdata[0].length; j++) {
+       float y = (((float)(matdata[0][j]) - xmin)/(xmax-xmin)) * height;
+       float x = width*(float)(j)/datamax;
+       
+       vertex(x,y);
+  }
+  endShape();
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 void draw() {
     //println(names[i]); 
     background(0);
   
   //TBD get array of a name  from file
-  String matname = "veh_x";
+  String matname = "veh_y";
   MatFileReader mfr = null;
   try {
     mfr = new MatFileReader(sketchPath + "/data/" + names[i] + "/" + matname + ".mat" );
@@ -66,20 +84,7 @@ void draw() {
                 */
    println("numAgg " + numAgg);
   
-
-  float datamax = matdata[0].length;
-  //smooth();
-  noFill();
-  stroke(255,255,255);
-  beginShape();
-  strokeWeight(1.0);
-  for (int j = 1; j < matdata[0].length; j++) {
-       float y = (((float)(matdata[0][j]) - xmin)/(xmax-xmin)) * height;
-       float x = width*(float)(j)/datamax;
-       
-       vertex(x,y);
-  }
-  endShape();
+  drawPlot(matdata,1);
   
   /////////////////////
   /// now that drawing is done, aggregate the new plot with the saved one
@@ -114,8 +119,11 @@ void draw() {
   updatePixels();
   saveBytes(matname + ".dat", data);
   
-  
+    /// draw the latest data again to highlight it
+  drawPlot(matdata,2);
   }
+  
+
 
   i++;
   if (i >= names.length) {

@@ -4,8 +4,7 @@ import com.jmatio.types.*;
 int tmax = 450;
 float gravity = -0.0020;
 float acc = 0.0045;
-float tx = 40;
-float ty = 70;
+
 
 float max_tdot = PI/20;
 
@@ -15,16 +14,23 @@ class veh {
   
 };*/
 
-float[] veh_x = new float[tmax];
-float[] veh_y = new float[tmax];
-float[] veh_vx = new float[tmax];
-float[] veh_vy = new float[tmax];
-float[] veh_ax = new float[tmax];
-float[] veh_ay = new float[tmax];
-float[] veh_theta = new float[tmax];
-float[] veh_thetadot = new float[tmax];
-float[] veh_theta_target = new float[tmax];
-float[] veh_theta_target2 = new float[tmax];
+double[] veh_x = new double[tmax];
+double[] veh_y = new double[tmax];
+double[] veh_vx = new double[tmax];
+double[] veh_vy = new double[tmax];
+double[] veh_ax = new double[tmax];
+double[] veh_ay = new double[tmax];
+double[] veh_theta = new double[tmax];
+double[] veh_thetadot = new double[tmax];
+double[] veh_theta_target = new double[tmax];
+double[] veh_theta_target2 = new double[tmax];
+
+float tx = 40;
+float ty = 70;
+//float[] trg_x = new float[tmax]; //40;
+//float[] trg_y = new float[tmax]; //70;
+//float[] trg_vx = new float[tmax]; //40;
+//float[] trg_vy = new float[tmax]; //70;
     
 void setup() {
   size(100,100);
@@ -52,23 +58,33 @@ void setup() {
   
 }
 
-int t = 1;
+//int t = 1;
+float offset = 0;
 
 void draw() {
-  float windx = 0.004*(0.8*noise(4.0*(float)veh_x[t-1]/(float)height, 4.0*(float)veh_y[t-1]/(float)width) + 
-                       0.2*noise(100+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width));
-  float windy = 0.004*(0.8*noise(0.5*(float)veh_x[t-1]/(float)height, 0.5*(float)veh_y[t-1]/(float)width) + 
-                       0.2*noise(100+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width));
+  background(0);
+  
+  stroke(255);
+  //fill(255);
+  noFill();
+  beginShape();
+  for (int t = 1; t < tmax; t++) {
+    float fr = 0.6;
+  float windx = 0.026*((fr*noise(offset + 4.0*(float)veh_x[t-1]/(float)height, 4.0*(float)veh_y[t-1]/(float)width) + 
+                       (1.0-fr)*noise(100+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width))-0.5);
+  float windy = 0.009*((fr*noise(1000+offset + 0.5*(float)veh_x[t-1]/(float)height, 0.5*(float)veh_y[t-1]/(float)width) + 
+                       (1.0-fr)*noise(1000+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width))-0.5);
+  offset += 10.0;                 
                        
-  float dx = tx-veh_x[t-1];
-  float dy = ty-veh_y[t-1];
+  float dx = (float)(tx-veh_x[t-1]);
+  float dy = (float)(ty-veh_y[t-1]);
   float dist2 = sqrt(dx*dx+dy*dy);
         
   veh_theta_target[t] = atan2( dx,dy );
   // TBD unwrap function
   //veh_theta_target(1:t) = unwrap(veh_theta_target(1:t));
         
-  veh_theta_target2[t] = atan2(veh_vx[t-1],veh_vy[t-1]);
+  veh_theta_target2[t] = atan2((float)veh_vx[t-1],(float)veh_vy[t-1]);
   //veh_theta_target2(1:t) = unwrap(veh_theta_target2(1:t));
         
   veh_thetadot[t] = 0.1*(veh_theta_target[t] - veh_theta[t-1] - 0.3*veh_theta_target2[t]);
@@ -81,8 +97,8 @@ void draw() {
         veh_theta[t] = veh_theta[t-1] + veh_thetadot[t];
             
         float real_acc = acc*(0.6 + 0.4*dist2/width);
-        veh_ax[t] = sin(veh_theta[t])*real_acc;
-        veh_ay[t] = cos(veh_theta[t])*real_acc + gravity;
+        veh_ax[t] = sin((float)veh_theta[t])*real_acc;
+        veh_ay[t] = cos((float)veh_theta[t])*real_acc + gravity;
         
         veh_vy[t] = veh_vy[t-1] + veh_ay[t];
         veh_vy[t] = veh_vy[t] + windy;
@@ -103,15 +119,38 @@ void draw() {
         if (veh_y[t] < 0)
            veh_y[t] = 0; 
         
-        stroke(255);
-        fill(255);
-        point((int)veh_x,(int)veh_y);
+        //stroke(255);
+        //fill(255);
+        vertex((int)veh_x[t],(int)veh_y[t]);
   
-  t++;
-  if (t >= tmax) {
-    noLoop();
-
-    
+  //t++;
+  
   }
+  endShape();
+  
+
+  writeMat("data/", "veh_x", veh_x);
+  writeMat("data/", "veh_y", veh_y);
+  writeMat("data/", "veh_theta", veh_theta);
+
+  
+//  if (t >= tmax) {
+//    noLoop(); 
+//  }
+noLoop();
 }
 
+
+void writeMat(String dir, String name, double[] vals) {
+  double[] src = new double[] { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+  MLDouble mlDouble = new MLDouble( name, vals, 1 );
+     
+  ArrayList list1 = new ArrayList();
+  list1.add( mlDouble );
+   
+   try {
+  new MatFileWriter(sketchPath + '/' + dir + name + ".mat", list1 ); 
+   } catch (IOException e) {
+      e.printStackTrace(); 
+   }
+}

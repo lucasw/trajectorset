@@ -35,6 +35,20 @@ float ty = 70;
 void setup() {
   size(100,100);
   
+  int seed = -1;
+  String lines[] = loadStrings("config.csv");
+  for (int i = 0; i < lines.length; i++) {
+    
+    String tokens[] = split(lines[0],' ');
+    if ( (tokens.length >= 2) && 
+        (tokens[0].equals("seed")) ) {
+      seed = Integer.parseInt(tokens[1]);    
+    }
+  }
+  
+  println("seed " + seed);
+  randomSeed(seed);
+  
   background(0);
   
   veh_x[0] = width/2;

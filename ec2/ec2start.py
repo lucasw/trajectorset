@@ -1,22 +1,26 @@
 
-from boto.ec2.connection import EC2Connection
+import boto
 
-# need
-
-
-
-conn = EC2Connection()
+conn = boto.connect_ec2()
 
 # launch 20 or so instance of this type
-#ami-0b729462
-#alestic/ubuntu-9.04-jaunty-desktop-20090614.manifest.xml
+#ami-b15bbad8
+images = conn.get_all_images('ami-b15bbad8')
+# TBD error check
+image = images[0]
+reservation_head = image.run(1,1,security_groups=['default','http'])
+inst_head = reservation_head.instances[0]
 
+reservation_worker = image.run(1,1)
+inst_workers = reservation_worker.instances
 
 # wait for most to finish
 
+#StrictHostKeyChecking=no
+
+# ssh in and export the AWS keys
 
 # install xvfb, need an automated 'yes' to the 'are you sure' query
-# apt-get install xvfb 
 # Xvfb :2 & 
 #[1] 14401 
 # export DISPLAY=":2" 

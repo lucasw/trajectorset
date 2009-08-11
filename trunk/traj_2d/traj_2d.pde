@@ -31,11 +31,13 @@ float ty = 70;
 //float[] trg_y = new float[tmax]; //70;
 //float[] trg_vx = new float[tmax]; //40;
 //float[] trg_vy = new float[tmax]; //70;
-    
+   
+int seed = -1;
+     
 void setup() {
   size(100,100);
   
-  int seed = -1;
+
   String lines[] = loadStrings("config.csv");
   for (int i = 0; i < lines.length; i++) {
     
@@ -84,7 +86,7 @@ void draw() {
   beginShape();
   for (int t = 1; t < tmax; t++) {
     float fr = 0.6;
-  float windx = 0.026*((fr*noise(offset + 4.0*(float)veh_x[t-1]/(float)height, 4.0*(float)veh_y[t-1]/(float)width) + 
+  float windx = 0.020*((fr*noise(offset + 4.0*(float)veh_x[t-1]/(float)height, 4.0*(float)veh_y[t-1]/(float)width) + 
                        (1.0-fr)*noise(100+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width))-0.5);
   float windy = 0.009*((fr*noise(1000+offset + 0.5*(float)veh_x[t-1]/(float)height, 0.5*(float)veh_y[t-1]/(float)width) + 
                        (1.0-fr)*noise(1000+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width))-0.5);
@@ -142,6 +144,7 @@ void draw() {
   }
   endShape();
   
+  saveFrame("output" + seed + ".png");
 
   writeMat("data/", "veh_x", veh_x);
   writeMat("data/", "veh_y", veh_y);

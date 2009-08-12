@@ -1,4 +1,5 @@
-
+import os
+import subprocess
 import boto
 
 conn = boto.connect_ec2()
@@ -15,18 +16,31 @@ reservation_worker = image.run(1,1)
 inst_workers = reservation_worker.instances
 
 # wait for most to finish
+for i in range(1, len(inst_workers)):
+    while (cmp(inst_workers[i].status,"running") != 0):
+        os.sleep(2)
+        print('i ')
+
 
 #StrictHostKeyChecking=no
 
 # ssh in and export the AWS keys
+print("exporting AWS keys")
+for i in range(1, len(inst_workers)):
+    cmd = "ssh -i ~/lucasw.pem root@" + inst_workers[i].dns_name + " export AWS_ACCESS_KEY_ID=" + os.environ['AWS_ACCESS_KEY_ID']  + "; export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY']
 
-# install xvfb, need an automated 'yes' to the 'are you sure' query
-# Xvfb :2 & 
-#[1] 14401 
-# export DISPLAY=":2" 
+    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = proc.communicate()
+    print("STDOUT: " + stdout)
+    print("STDERR: " + stderr)
+   
+    # need to detach this
+    # install xvfb, need an automated 'yes' to the 'are you sure' query
+    cmd = "Xvfb :2 &,# export DISPLAY=\":2\"" 
+    #[1] 14401 
 
 
-# sftp exported app to all of them in 20 simultaneous sftps
+    # sftp exported app to all of them in 20 simultaneous sftps
 
 
 # open 20 ssh sessions, run each app-

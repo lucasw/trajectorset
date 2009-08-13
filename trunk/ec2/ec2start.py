@@ -2,6 +2,29 @@ import os
 import subprocess
 import boto
 
+def ssh_cmd(dns_name, cmd):
+    whole_cmd = "ssh -i ~/lucasw.pem root@" + dns_name + cmd
+    
+    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = proc.communicate()
+    print("STDOUT: " + stdout)
+    print("STDERR: " + stderr)
+   
+
+def setup_node(dns_name):
+    cmd = "cat \""
+    cmd += "export AWS_ACCESS_KEY_ID=" + os.environ['AWS_ACCESS_KEY_ID'] + 
+            "; export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY'] + ";" 
+    cmd += "\" >> ~/.bashrc"
+
+    ssh_cmd(dns_name,cmd)
+
+    # need to detach this: nohup or disown?
+    # nohup command > /dev/null 2>&1
+    cmd = "Xvfb :2 &; export DISPLAY=\":2\";" 
+    cmd = "nohup " + cmd + " > /dev/null 2>&1"
+    ssh_cmd(dns_name,cmd)
+
 conn = boto.connect_ec2()
 
 # launch 20 or so instance of this type
@@ -12,7 +35,7 @@ image = images[0]
 reservation_head = image.run(1,1,security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
-reservation_worker = image.run(1,1)
+reservation_worker = image.run(2,2)
 inst_workers = reservation_worker.instances
 
 # wait for most to finish
@@ -25,20 +48,11 @@ for i in range(1, len(inst_workers)):
 #StrictHostKeyChecking=no
 
 # ssh in and export the AWS keys
-print("exporting AWS keys")
+print("setting up nodes")
+setup_node(inst_head.dns_name)
 for i in range(1, len(inst_workers)):
-    cmd = "ssh -i ~/lucasw.pem root@" + inst_workers[i].dns_name + " export AWS_ACCESS_KEY_ID=" + os.environ['AWS_ACCESS_KEY_ID']  + "; export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY']
-
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    (stdout,stderr) = proc.communicate()
-    print("STDOUT: " + stdout)
-    print("STDERR: " + stderr)
+    setup_node(inst_workers[i].dns_name)
    
-    # need to detach this
-    # install xvfb, need an automated 'yes' to the 'are you sure' query
-    cmd = "Xvfb :2 &,# export DISPLAY=\":2\"" 
-    #[1] 14401 
-
 
     # sftp exported app to all of them in 20 simultaneous sftps
 

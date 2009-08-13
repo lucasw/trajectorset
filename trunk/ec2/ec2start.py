@@ -5,25 +5,40 @@ import boto
 def ssh_cmd(dns_name, cmd):
     whole_cmd = "ssh -i ~/lucasw.pem root@" + dns_name + cmd
     
-    proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(whole_cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (stdout,stderr) = proc.communicate()
+    print("CMD: " + whole_cmd)
+    print("STDOUT: " + stdout)
+    print("STDERR: " + stderr)
+ 
+def ssh_detach_cmd(dns_name,cmd):
+    cmd = "nohup " + cmd + " > /dev/null 2>&1"
+    ssh_cmd(dns_name, cmd)
+
+def scp_cmd(dns_name, files):
+    whole_cmd = "scp -i ~/lucasw.pem " + files + " root@" + dns_name + ":/mnt"
+    
+    proc = subprocess.Popen(whole_cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout,stderr) = proc.communicate()
+    print("CMD: " + whole_cmd)
     print("STDOUT: " + stdout)
     print("STDERR: " + stderr)
    
 
 def setup_node(dns_name):
+    # nohup command > /dev/null 2>&1
+    cmd = "Xvfb :2 &;" 
+    ssh_nohup_cmd(dns_name,cmd)
+    
     cmd = "cat \""
     cmd += "export AWS_ACCESS_KEY_ID=" + os.environ['AWS_ACCESS_KEY_ID'] + 
             "; export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY'] + ";" 
+    cmd += "export DISPLAY=\":2\";" 
     cmd += "\" >> ~/.bashrc"
 
     ssh_cmd(dns_name,cmd)
 
-    # need to detach this: nohup or disown?
-    # nohup command > /dev/null 2>&1
-    cmd = "Xvfb :2 &; export DISPLAY=\":2\";" 
-    cmd = "nohup " + cmd + " > /dev/null 2>&1"
-    ssh_cmd(dns_name,cmd)
+###########################################################
 
 conn = boto.connect_ec2()
 
@@ -47,15 +62,15 @@ for i in range(1, len(inst_workers)):
 
 #StrictHostKeyChecking=no
 
-# ssh in and export the AWS keys
+# ssh in and export the AWS keys, start Xvfb, get them started
 print("setting up nodes")
 setup_node(inst_head.dns_name)
 for i in range(1, len(inst_workers)):
     setup_node(inst_workers[i].dns_name)
    
-
-    # sftp exported app to all of them in 20 simultaneous sftps
-
+    # scp exported app to all of them in 20 simultaneous sftps
+    scp_cmd(inst_workers[i].dns_name, "traj_2d.zip")
+    scp_cmd(inst_workers[i].dns_name, "ec2worker.py")
 
 # open 20 ssh sessions, run each app-
 # TBD pass seed parameter to app?

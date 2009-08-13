@@ -30,7 +30,7 @@ def setup_node(dns_name):
     cmd = "Xvfb :2 &;" 
     ssh_nohup_cmd(dns_name,cmd)
     
-    cmd = "cat \""
+    cmd = "echo \""
     cmd += "export AWS_ACCESS_KEY_ID=" + os.environ['AWS_ACCESS_KEY_ID'] + 
             "; export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY'] + ";" 
     cmd += "export DISPLAY=\":2\";" 
@@ -66,27 +66,18 @@ for i in range(1, len(inst_workers)):
 print("setting up nodes")
 setup_node(inst_head.dns_name)
 for i in range(1, len(inst_workers)):
-    setup_node(inst_workers[i].dns_name)
+    dns_name = inst_workers.dns_name
+    setup_node(dns_name)
    
     # scp exported app to all of them in 20 simultaneous sftps
-    scp_cmd(inst_workers[i].dns_name, "traj_2d.zip")
-    scp_cmd(inst_workers[i].dns_name, "ec2worker.py")
+    scp_cmd(dns_name, "traj_2d.zip")
+    scp_cmd(dns_name, "ec2worker.py")
+    #utility functions in here
+    scp_cmd(dns_name, "ec2start.py")
 
-# open 20 ssh sessions, run each app-
-# TBD pass seed parameter to app?
-# or have seed be noise() based
-#  have each only cycle once (don't reset within the app)
-# loop around each, make it so they don't erase existing files
-
-# return stdout of each ssh session to this stdout
-# sftp a few images of results back - maybe big grid screen?
-# or just last, middle images or a few more
-
-# after 10-20 cycles, exit
-# sftp all results back
-
-# run other app to aggregate 20 all together
-
-
+    ssh_nohup_cmd(dns_name, "cd /mnt; ./ec2worker.py")
+    
+# TBD wait for 'all done' meesg from head_node and then scp 
+# final results down
 
 

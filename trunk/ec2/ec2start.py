@@ -62,20 +62,25 @@ for i in range(1, len(inst_workers)):
 
 #StrictHostKeyChecking=no
 
+print("setting up head node")
+dns_name = inst_head.dns_name
+setup_node(dns_name)
+
 # ssh in and export the AWS keys, start Xvfb, get them started
-print("setting up nodes")
+print("setting up worker nodes")
 setup_node(inst_head.dns_name)
 for i in range(1, len(inst_workers)):
-    dns_name = inst_workers.dns_name
+    dns_name = inst_workers[i].dns_name
     setup_node(dns_name)
    
     # scp exported app to all of them in 20 simultaneous sftps
-    scp_cmd(dns_name, "traj_2d.zip")
+    zipname = "traj_2d.zip"
+    scp_cmd(dns_name, zipname)
     scp_cmd(dns_name, "ec2worker.py")
     #utility functions in here
     scp_cmd(dns_name, "ec2start.py")
 
-    ssh_nohup_cmd(dns_name, "cd /mnt; ./ec2worker.py")
+    ssh_nohup_cmd(dns_name, "cd /mnt; unzip " + zipname + "; chmod a+x traj_2d; chmod a+x ec2worker.py; ./ec2worker.py")
     
 # TBD wait for 'all done' meesg from head_node and then scp 
 # final results down

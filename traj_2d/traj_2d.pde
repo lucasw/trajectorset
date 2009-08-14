@@ -49,7 +49,7 @@ void setup() {
   }
   
   println("seed " + seed);
-  randomSeed(seed);
+  noiseSeed(seed);
   
   background(0);
   
@@ -154,7 +154,7 @@ void draw() {
 //  if (t >= tmax) {
 //    noLoop(); 
 //  }
-noLoop();
+exit();
 }
 
 

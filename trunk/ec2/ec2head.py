@@ -1,5 +1,9 @@
+#!/usr/bin/python
+
+import subprocess
 import re
 import shutil
+import time
 import boto
 
 conn = boto.connect_sqs()
@@ -9,10 +13,30 @@ doneq  = conn.create_queue('doneq')
 
 # to start create a bunch of start message, proportional to the size
 
+# create an html file 
+# TBD may want to run this every cycle to change text on the page
+whole_cmd="""echo " 
+<html>
+<meta http-equiv=\\"REFRESH\\" content=\\"1\\">
+<title>Results</title>
+
+<img src=\\"output.png\\"></img>
+</html> > /var/www/index.html 
+"""
+proc = subprocess.Popen(whole_cmd, shell=True, 
+        stdin=subprocess.PIPE, 
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+(stdout,stderr) = proc.communicate()
+print("make html: " + stdout)
+print("make html: " + stderr)
+
 max_seed = 100
 # number of seeds to have in queue
 # TBD make proportional to number of workers
 #num_seeds = 10
+
+
+
 for seed in range (0, max_seed):
     m = boto.sqs.Message()
     m.set_body('START ' + str(seed))
@@ -61,7 +85,7 @@ while True:
         shutil.copy("output.png", "/var/www/output.png")
         shutil.move("output.png", "output" + str(counter) ".png")
         shutil.move("data", "dataused/data" + str(counter))
-        counter++
+        counter += 1
 
     # finished, loop and move on to next messages after pausing
-    os.sleep(1)
+    time.sleep(1)

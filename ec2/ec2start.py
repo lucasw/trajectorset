@@ -1,6 +1,9 @@
+#!/usr/bin/python
+
 import os
 import subprocess
 import boto
+import time
 
 def ssh_cmd(dns_name, cmd):
     whole_cmd = "ssh -i ~/lucasw.pem root@" + dns_name + cmd
@@ -27,7 +30,7 @@ def scp_cmd(dns_name, files):
 def setup_node(dns_name):
     # nohup command > /dev/null 2>&1
     cmd = "Xvfb :2 &;" 
-    ssh_nohup_cmd(dns_name,cmd)
+    ssh_detach_cmd(dns_name,cmd)
     
     cmd = "echo \""
     cmd += "export AWS_ACCESS_KEY_ID="     + os.environ['AWS_ACCESS_KEY_ID'] + ";" 
@@ -42,7 +45,7 @@ def setup_node(dns_name):
 def startup(dns_name, zipname, scriptname, execname):
     scp_cmd(dns_name, zipname)
     scp_cmd(dns_name, scriptname)
-    ssh_nohup_cmd(dns_name, "cd /mnt; unzip " + zipname + "; chmod a+x " + execname + "; chmod a+x " + scriptname + "; ./" + scriptname)
+    ssh_detach_cmd(dns_name, "cd /mnt; unzip " + zipname + "; chmod a+x " + execname + "; chmod a+x " + scriptname + "; #./" + scriptname)
  
 
 ###########################################################
@@ -54,17 +57,26 @@ conn = boto.connect_ec2()
 images = conn.get_all_images('ami-b15bbad8')
 # TBD error check
 image = images[0]
+print("starting instances")
 reservation_head = image.run(1,1,security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
 reservation_worker = image.run(2,2)
-inst_workers = reservation_worker.instances
+#inst_workers = reservation_worker.instances
 
+print("waiting for instances to run")
 # wait for most to finish
-for i in range(1, len(inst_workers)):
-    while (cmp(inst_workers[i].status,"running") != 0):
-        os.sleep(2)
-        print('i ')
+i = 0
+all_finished = False
+while not all_finished: 
+    time.sleep(5)
+    all_finished = True
+    for worker in reservation_worker.instances:
+        worker.update()
+        if (cmp(worker.state,"running") != 0):
+            all_finished = False
+            i += 1
+            print(str(i) + ' waiting for ' + str(worker) + ' ' + worker.state)
 
 
 #StrictHostKeyChecking=no
@@ -85,8 +97,8 @@ startup(dns_name, zipname, scriptname, execname)
 # ssh in and export the AWS keys, start Xvfb, get them started
 print("setting up worker nodes")
 setup_node(inst_head.dns_name)
-for i in range(1, len(inst_workers)):
-    dns_name = inst_workers[i].dns_name
+for worker in reservation_workers.instances:  #inst_workers:
+    dns_name = worker.dns_name
     setup_node(dns_name)
    
     # scp exported app to all of them in 20 simultaneous sftps

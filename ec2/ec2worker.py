@@ -1,3 +1,6 @@
+#!/usr/bin/python
+
+import subprocess
 import boto
 import re
 import os
@@ -25,7 +28,7 @@ while True:
         msg = m.get_body()
 
         startq.delete_message(m)
-        counter++
+        counter += 1
 
         seed = -1
         # do a re match one START seed_num, and extract seed_num

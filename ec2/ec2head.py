@@ -1,5 +1,6 @@
-import boto
 import re
+import shutil
+import boto
 
 conn = boto.connect_sqs()
 
@@ -8,26 +9,59 @@ doneq  = conn.create_queue('doneq')
 
 # to start create a bunch of start message, proportional to the size
 
+max_seed = 100
+# number of seeds to have in queue
+# TBD make proportional to number of workers
+#num_seeds = 10
+for seed in range (0, max_seed):
+    m = boto.sqs.Message()
+    m.set_body('START ' + str(seed))
+    startq.write(m)
+
+os.mkdir("dataused")
+
+counter = 10000000
+
 while True:
-    # 
-
-
-
-    rs = startq.get_messages()
-    if len(rs) > 0:
-        m = rs[0]
+    os.mkdir("data")
+    rs = doneq.get_messages()
+    # TBD may not want to process all the messages, if it will take 
+    # longer than a few seconds- would rather do only a few
+    # and more quickly update
+    for m in rs:
         msg = m.get_body()
-
-        startq.delete_message(m)
+        doneq.delete_message(m)
         
-        seed = -1
-        # do a re match one START seed_num, and extract seed_num
-        # create a config.csv file with the seed in it
-        # run the traj_2d on it
-        # move the output files into data[seed_num] folder
-        
-        m = boto.sqs.Message()
-        m.set_body('DONE ' + str(seed))
-        doneq.write(m)
+        # extract the dnsname and the seed number from the message
+        match = re.search("(.*)( )(\w+)", msg)
+        dns_name = match.groups()[0]
+        seed = int(match.groups()[2])
+        print("DONE " + dns_name + " " +str(seed))
 
-        # finished, loop and move on to next message
+        # now download the results to data
+        whole_cmd = "scp -i /mnt/lucasw.pem -r root@" + dns_name + ":/mnt/archive/data" + str(seed) + " data/"
+        proc = subprocess.Popen(whole_cmd, shell=True, 
+                                stdin=subprocess.PIPE, 
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout,stderr) = proc.communicate()
+        print("scp: " + stdout)
+        print("scp: " + stderr)
+
+    # if there are few new data files
+    if len(rs) > 0:
+        # run plot2d_aggregate
+        proc = subprocess.Popen("./plot2d_aggregate", shell=True, 
+                                stdin=subprocess.PIPE, 
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout,stderr) = proc.communicate()
+        print("plot2d: " + stdout)
+        print("plot2d: " + stderr)
+
+        # copy results to /var/www
+        shutil.copy("output.png", "/var/www/output.png")
+        shutil.move("output.png", "output" + str(counter) ".png")
+        shutil.move("data", "dataused/data" + str(counter))
+        counter++
+
+    # finished, loop and move on to next messages after pausing
+    os.sleep(1)

@@ -24,7 +24,7 @@ whole_cmd="""echo "
 <title>Results</title>
 
 <img src=\\"output.png\\"></img>
-</html> > /var/www/index.html 
+</html> > /var/www/index.lighttpd.html 
 """
 proc = subprocess.Popen(whole_cmd, shell=True, 
         stdin=subprocess.PIPE, 

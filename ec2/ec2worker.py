@@ -8,6 +8,7 @@ import boto
 import re
 import os
 import shutil
+import time
 #import glob
 
 #import ec2start
@@ -69,5 +70,6 @@ while True:
         m = boto.sqs.Message()
         m.set_body(os.environ['DNS'] + ' ' + str(seed))
         doneq.write(m)
-
+    else:
+        time.sleep(1)
         # finished, loop and move on to next message

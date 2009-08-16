@@ -10,7 +10,7 @@ import os
 import shutil
 #import glob
 
-import ec2start
+#import ec2start
 
 def log(msg):
     f = open("log.txt","a")
@@ -58,7 +58,10 @@ while True:
         print("traj_2d: " + stderr)
 
         # move the output files into data[seed_num] folder
-        os.mkdir("archive")
+        try:
+            os.mkdir("archive")
+        except:
+            pass
         #os.mkdir("archive/data" + str(seed))
         shutil.move("data","archive/data" + str(seed))  
         os.mkdir("data")

@@ -3,6 +3,7 @@
 # Licensed under the GNU GPL v3.0
 # binarymillenium 2009
 
+import os
 import subprocess
 import re
 import shutil
@@ -12,7 +13,11 @@ import boto
 conn = boto.connect_sqs()
 
 startq = conn.create_queue('startq')
+startq.clear()
+
 doneq  = conn.create_queue('doneq')
+doneq.clear()
+
 
 # to start create a bunch of start message, proportional to the size
 
@@ -20,11 +25,11 @@ doneq  = conn.create_queue('doneq')
 # TBD may want to run this every cycle to change text on the page
 whole_cmd="""echo " 
 <html>
-<meta http-equiv=\\"REFRESH\\" content=\\"1\\">
+<meta http-equiv=\\"REFRESH\\" content=\\"2\\">
 <title>Results</title>
 
 <img src=\\"output.png\\"></img>
-</html> > /var/www/index.lighttpd.html 
+</html>" > /var/www/index.lighttpd.html 
 """
 proc = subprocess.Popen(whole_cmd, shell=True, 
         stdin=subprocess.PIPE, 
@@ -33,7 +38,7 @@ proc = subprocess.Popen(whole_cmd, shell=True,
 print("make html: " + stdout)
 print("make html: " + stderr)
 
-max_seed = 100
+max_seed = 1000
 # number of seeds to have in queue
 # TBD make proportional to number of workers
 #num_seeds = 10
@@ -45,12 +50,18 @@ for seed in range (0, max_seed):
     m.set_body('START ' + str(seed))
     startq.write(m)
 
-os.mkdir("dataused")
+try:
+    os.mkdir("dataused")
+except:
+    pass
 
 counter = 10000000
 
 while True:
-    os.mkdir("data")
+    try:
+    	os.mkdir("data")
+    except OSError:
+        pass
     rs = doneq.get_messages()
     # TBD may not want to process all the messages, if it will take 
     # longer than a few seconds- would rather do only a few
@@ -66,7 +77,7 @@ while True:
         print("DONE " + dns_name + " " +str(seed))
 
         # now download the results to data
-        whole_cmd = "scp -i /mnt/lucasw.pem -r root@" + dns_name + ":/mnt/archive/data" + str(seed) + " data/"
+        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" + str(seed) + " data/"
         proc = subprocess.Popen(whole_cmd, shell=True, 
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -86,7 +97,7 @@ while True:
 
         # copy results to /var/www
         shutil.copy("output.png", "/var/www/output.png")
-        shutil.move("output.png", "output" + str(counter) ".png")
+        shutil.move("output.png", "output" + str(counter) + ".png")
         shutil.move("data", "dataused/data" + str(counter))
         counter += 1
 

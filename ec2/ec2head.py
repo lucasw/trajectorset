@@ -10,6 +10,7 @@ import shutil
 import time
 import boto
 
+print("connecting to sqs")
 conn = boto.connect_sqs()
 
 startq = conn.create_queue('startq')
@@ -38,13 +39,13 @@ proc = subprocess.Popen(whole_cmd, shell=True,
 print("make html: " + stdout)
 print("make html: " + stderr)
 
-max_seed = 1000
+max_seed = 500
 # number of seeds to have in queue
 # TBD make proportional to number of workers
 #num_seeds = 10
 
 
-
+print("making " + str(max_seed) + " seeds messages")
 for seed in range (0, max_seed):
     m = boto.sqs.Message()
     m.set_body('START ' + str(seed))
@@ -57,6 +58,7 @@ except:
 
 counter = 10000000
 
+print("starting processing loop")
 while True:
     try:
     	os.mkdir("data")

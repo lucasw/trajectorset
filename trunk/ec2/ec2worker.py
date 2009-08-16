@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# Licensed under the GNU GPL v3.0
+# binarymillenium 2009
+
 import subprocess
 import boto
 import re

@@ -1,12 +1,15 @@
 #!/usr/bin/python
 
+# Licensed under the GNU GPL v3.0
+# binarymillenium 2009
+
 import os
 import subprocess
 import boto
 import time
 
 def ssh_cmd(dns_name, cmd):
-    whole_cmd = "ssh -i ~/lucasw.pem root@" + dns_name + cmd
+    whole_cmd = "ssh -i ~/lucasw.pem root@" + dns_name + " \"" + cmd + "\""
     
     proc = subprocess.Popen(whole_cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (stdout,stderr) = proc.communicate()
@@ -15,7 +18,7 @@ def ssh_cmd(dns_name, cmd):
     print("STDERR: " + stderr)
  
 def ssh_detach_cmd(dns_name,cmd):
-    cmd = "nohup " + cmd + " > /dev/null 2>&1"
+    cmd = "nohup \\\"" + cmd + "\\\" > /dev/null 2>&1"
     ssh_cmd(dns_name, cmd)
 
 def scp_cmd(dns_name, files):
@@ -28,19 +31,18 @@ def scp_cmd(dns_name, files):
    
 
 def setup_node(dns_name):
-    # nohup command > /dev/null 2>&1
-    cmd = "Xvfb :2 &;" 
-    ssh_detach_cmd(dns_name,cmd)
-    
-    cmd = "echo \""
-    cmd += "export AWS_ACCESS_KEY_ID="     + os.environ['AWS_ACCESS_KEY_ID'] + ";" 
-    cmd += "export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY'] + ";" 
-    cmd += "export DISPLAY=:2;" 
-    cmd += "export DNS=" + dns_name + ";" 
-    cmd += "\" >> ~/.bashrc"
+   
+    cmd =  "echo \\\""
+    cmd += "export AWS_ACCESS_KEY_ID="     + os.environ['AWS_ACCESS_KEY_ID'] + ";\n"
+    cmd += "export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY'] + ";\n"
+    cmd += "export DISPLAY=:2;\n"
+    cmd += "export DNS=" + dns_name + ";\n"
+    cmd += "\\\" >> ~/.bashrc"
 
     ssh_cmd(dns_name,cmd)
 
+    cmd = "Xvfb :2 &;" 
+    ssh_detach_cmd(dns_name,cmd)
 
 def startup(dns_name, zipname, scriptname, execname):
     scp_cmd(dns_name, zipname)
@@ -71,12 +73,17 @@ all_finished = False
 while not all_finished: 
     time.sleep(5)
     all_finished = True
+    unfinished_count = 0
+    
+
+    
     for worker in reservation_worker.instances:
         worker.update()
         if (cmp(worker.state,"running") != 0):
             all_finished = False
-            i += 1
-            print(str(i) + ' waiting for ' + str(worker) + ' ' + worker.state)
+            unfinished_count +=1
+    i += 1
+    print(str(i) + ' waiting for ' + str(unfinished_count) + ' workers')
 
 
 #StrictHostKeyChecking=no

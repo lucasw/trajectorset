@@ -18,7 +18,8 @@ def ssh_cmd(dns_name, cmd):
     print("STDERR: " + stderr)
  
 def ssh_detach_cmd(dns_name,cmd):
-    cmd = "nohup \\\"" + cmd + "\\\" > /dev/null 2>&1"
+    # can't run commands in quotes
+    cmd = "nohup " + cmd + " > /dev/null 2>&1 &"
     ssh_cmd(dns_name, cmd)
 
 def scp_cmd(dns_name, files):
@@ -32,6 +33,9 @@ def scp_cmd(dns_name, files):
 
 def setup_node(dns_name):
    
+    cmd = "Xvfb :2" 
+    ssh_detach_cmd(dns_name,cmd)
+    
     cmd =  "echo \\\""
     cmd += "export AWS_ACCESS_KEY_ID="     + os.environ['AWS_ACCESS_KEY_ID'] + ";\n"
     cmd += "export AWS_SECRET_ACCESS_KEY=" + os.environ['AWS_SECRET_ACCESS_KEY'] + ";\n"
@@ -41,13 +45,13 @@ def setup_node(dns_name):
 
     ssh_cmd(dns_name,cmd)
 
-    cmd = "Xvfb :2 &;" 
-    ssh_detach_cmd(dns_name,cmd)
 
 def startup(dns_name, zipname, scriptname, execname):
     scp_cmd(dns_name, zipname)
     scp_cmd(dns_name, scriptname)
-    ssh_detach_cmd(dns_name, "cd /mnt; unzip " + zipname + "; chmod a+x " + execname + "; chmod a+x " + scriptname + "; #./" + scriptname)
+    ssh_cmd(dns_name, "cd /mnt; unzip " + zipname + "; chmod a+x " + execname + "; chmod a+x " + scriptname + ";")
+    ssh_cmd(dns_name, "echo \\\"#!/bin/sh;\ncd /mnt;\n ./" + scriptname + "\\\" > test.sh; chmod a+x test.sh")
+    #ssh_detach("./test.sh")
  
 
 ###########################################################
@@ -74,14 +78,18 @@ while not all_finished:
     time.sleep(5)
     all_finished = True
     unfinished_count = 0
-    
+   
+    inst_head.update()
+    if (cmp(inst_head.state,"running") != 0):
+        all_finished = False
+        unfinished_count +=1
 
-    
     for worker in reservation_worker.instances:
         worker.update()
         if (cmp(worker.state,"running") != 0):
             all_finished = False
             unfinished_count +=1
+    
     i += 1
     print(str(i) + ' waiting for ' + str(unfinished_count) + ' workers')
 
@@ -104,7 +112,7 @@ startup(dns_name, zipname, scriptname, execname)
 # ssh in and export the AWS keys, start Xvfb, get them started
 print("setting up worker nodes")
 setup_node(inst_head.dns_name)
-for worker in reservation_workers.instances:  #inst_workers:
+for worker in reservation_worker.instances:  #inst_workers:
     dns_name = worker.dns_name
     setup_node(dns_name)
    

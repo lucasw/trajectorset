@@ -35,8 +35,7 @@ float ty = 70;
 int seed = -1;
      
 void setup() {
-  size(100,100);
-  
+  size(100,100); 
 
   String lines[] = loadStrings("config.csv");
   for (int i = 0; i < lines.length; i++) {
@@ -126,11 +125,14 @@ void draw() {
         veh_x[t] = veh_x[t-1] + veh_vx[t];
         veh_y[t] = veh_y[t-1] + veh_vy[t];
         
-        if (veh_x[t] > width)
-            veh_x[t] = veh_x[t] -width;
+        
+        /*
+        if (veh_x[t] >= width)
+            veh_x[t] = width;
   
         if (veh_x[t] < 0)
-           veh_x[t] = veh_x[t] + width;
+           veh_x[t] = 0;
+        */   
 
         if (veh_y[t] < 0)
            veh_y[t] = 0; 

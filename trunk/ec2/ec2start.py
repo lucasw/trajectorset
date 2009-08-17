@@ -84,7 +84,7 @@ print("starting instances")
 reservation_head = image.run(1,1,security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
-reservation_worker = image.run(1,2)
+reservation_worker = image.run(3,6)
 #inst_workers = reservation_worker.instances
 
 print("waiting for instances to run")
@@ -112,7 +112,7 @@ while not all_finished:
     
     i += 1
     print(str(i) + ' waiting for ' + str(unfinished_count) + ' workers')
-    if (head_finished) and (i > 15):
+    if (head_finished) and (i > 17):
         all_finished = True
 
 #StrictHostKeyChecking=no

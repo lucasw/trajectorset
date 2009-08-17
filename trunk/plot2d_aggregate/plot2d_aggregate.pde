@@ -42,6 +42,12 @@ void drawPlot(double[][] matData, float weight) {
        float y = (((float)(matData[0][j]) - xmin)/(xmax-xmin)) * height;
        float x = width*(float)(j)/dataMax;
        
+       ///
+       if (x >= width) x = width-1;
+       if (y >= height) y = height-1;
+       if (x<0) x=0;
+       if (y<0) y=0;
+       
        vertex(x,y);
   }
   endShape();
@@ -115,6 +121,8 @@ void draw() {
     }
   }
 
+  text((int)numAgg + " runs with " + names.length  + " new runs",10,50);
+  
   saveFrame("output.png");
  // nameInd++;
  // if (nameInd >= names.length) {

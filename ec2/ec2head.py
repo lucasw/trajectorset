@@ -104,4 +104,4 @@ while True:
         counter += 1
 
     # finished, loop and move on to next messages after pausing
-    time.sleep(1)
+    time.sleep(2)

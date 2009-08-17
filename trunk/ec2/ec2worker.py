@@ -24,6 +24,12 @@ conn = boto.connect_sqs()
 startq = conn.create_queue('startq')
 doneq  = conn.create_queue('doneq')
 
+try:
+    os.mkdir("data")
+except:
+    pass
+
+
 counter = 0
 while True:
     rs = startq.get_messages()

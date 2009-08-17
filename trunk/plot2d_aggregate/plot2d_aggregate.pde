@@ -67,14 +67,17 @@ double[][] getData(String name, String matName) {
   return null;
 }
 
+///////////////////////////////////////////////////////
+
 void draw() {
   //TBD get array of a name  from file
   String matName = "veh_x"; 
   
   /// load or create the data buffer
   byte[] data = loadBytes(matName + ".dat");
-  if ((data == null) /*|| (i == 0)*/)  data = new byte[width*height*4];
+  if ((data == null) /*|| (i == 0)*/)  data = new byte[(width*height+1)*4];
   
+  float numAgg = -1.0;
   for (int nameInd=0; nameInd <names.length; nameInd++) {   
     double[][] matData = getData(names[nameInd], matName);
     if (matData == null) { 
@@ -83,24 +86,25 @@ void draw() {
     }   
     
     background(0);  
-    int numAgg = i+1;
+    
     drawPlot(matData,1);
     
     /////////////////////
     /// now that drawing is done, aggregate the new plot with the saved one    
-    updateDataAndPixels(data, numAgg);
+    numAgg = updateDataAndPixels(data, true);
 
   } // name list
+  saveBytes(matName + ".dat", data);
   
+  /// just draw the existing data even if there is nothing new 
   if (names.length == 0) {
-    /// just draw the existing data even if there is nothing new 
     background(0);
     /// TBD need to generate numAgg from saved file- put in last four bytes of data[]?
-    updateDataAndPixels(data,  numAgg);  
+    numAgg  = updateDataAndPixels(data,  false);     
   }
+  println(numAgg + " runs with " + names.length  + " new runs aggregated");
   
-  
-  saveBytes(matName + ".dat", data);
+  saveFrame("output_nohighlight.png");
   
   /// draw the latest data again to highlight it
   for (int nameInd=0; nameInd <names.length; nameInd++) {   
@@ -121,36 +125,57 @@ void draw() {
 }
 
 
-void updateDataAndPixels(byte[] data, float numAgg) {
+float updateDataAndPixels(byte[] data, boolean hasNew) {
   loadPixels();
   float[] newData = new float[width*height];
-  for (int i = 0; i < data.length; i+=4) {
-      // convert from bytes back to float
-      int accum = ((data[i+3]&0xff) << 24) | 
-                  ((data[i+2]&0xff) << 16) | 
-                  ((data[i+1]&0xff) << 8) | 
-                   (data[i+0]&0xff);
-                   
+  
+  float numAgg= bytesToFloat(data,width*height*4);
+  /// this stores the total number of runs
+  if(hasNew) numAgg += 1.0;
+      
+  for (int i = 0; i < data.length-4; i+=4) {             
       int zind = i/4;
     
       /// add the data and immediately convert back to bytes
-      newData[zind] = Float.intBitsToFloat(accum);
+      newData[zind] = bytesToFloat(data,i);
       newData[zind] += (float)red(pixels[zind])/255.0;
-      int bits = Float.floatToIntBits(newData[zind]);
-      data[i+3] = (byte) ((bits >> 24) & 0xff);
-      data[i+2] = (byte) ((bits >> 16) & 0xff);
-      data[i+1] = (byte) ((bits >> 8)  & 0xff);
-      data[i+0] = (byte) ((bits >> 0)  & 0xff);
+      data = floatToBytes(data, i, newData[zind]);
       
+   
       /// now update the pixel for display
-      float fr = newData[zind]/(float)numAgg;
+      float fr = newData[zind]/numAgg;
       pixels[zind] = color(fr*32.0*255.0,
                            fr*4.0*255.0, 
                            fr*16.0 + ((fr >0) ? 127.0 :0) ); 
+       
   }
+      
+  data = floatToBytes(data, width*height*4, numAgg);
       
   updatePixels();
   
+  return numAgg;
 }
 
+float bytesToFloat(byte[] data, int i) {
+    // convert from bytes back to float
+    int accum = ((data[i+3]&0xff) << 24) | 
+                ((data[i+2]&0xff) << 16) | 
+                ((data[i+1]&0xff) << 8) | 
+                 (data[i+0]&0xff);
+                 
+    return Float.intBitsToFloat(accum);             
+}
+
+byte[] floatToBytes(byte[] rv, int i, float val) {
+    //byte[] rv = new byte[4];
+    
+      int bits = Float.floatToIntBits(val);
+      rv[i+3] = (byte) ((bits >> 24) & 0xff);
+      rv[i+2] = (byte) ((bits >> 16) & 0xff);
+      rv[i+1] = (byte) ((bits >> 8)  & 0xff);
+      rv[i+0] = (byte) ((bits >> 0)  & 0xff);
+      
+      return rv;
+}
 

@@ -37,18 +37,7 @@ int seed = -1;
 void setup() {
   size(100,100); 
 
-  String lines[] = loadStrings("config.csv");
-  for (int i = 0; i < lines.length; i++) {
-    
-    String tokens[] = split(lines[0],' ');
-    if ( (tokens.length >= 2) && 
-        (tokens[0].equals("seed")) ) {
-      seed = Integer.parseInt(tokens[1]);    
-    }
-  }
-  
-  println("seed " + seed);
-  noiseSeed(seed);
+
   
   background(0);
   
@@ -77,6 +66,21 @@ void setup() {
 float offset = 0;
 
 void draw() {
+  
+  String lines[] = loadStrings("config.csv");
+  for (int i = 0; i < lines.length; i++) {
+    
+    seed = -1;
+    String tokens[] = split(lines[i],' ');
+    if ( (tokens.length >= 2) && 
+        (tokens[0].equals("seed")) ) {
+      seed = Integer.parseInt(tokens[1]);    
+    }
+  
+  
+  println("seed " + seed);
+  noiseSeed(seed);
+  
   background(0);
   
   stroke(255);
@@ -146,16 +150,19 @@ void draw() {
   }
   endShape();
   
-  saveFrame("output" + seed + ".png");
+  saveFrame("data/output" + seed + ".png");
 
-  writeMat("data/", "veh_x", veh_x);
-  writeMat("data/", "veh_y", veh_y);
-  writeMat("data/", "veh_theta", veh_theta);
-
+  String subfolder = "data/data" + seed + "/";
+  String folder= sketchPath + "/" +subfolder;
+  //boolean success = (new File(folder)).mkdir();
+  //if (success) println("folder " + folder + " created");
+  //else println("folder " + folder + " failed");
   
-//  if (t >= tmax) {
-//    noLoop(); 
-//  }
+  writeMat(subfolder, "veh_x", veh_x);
+  writeMat(subfolder, "veh_y", veh_y);
+  writeMat(subfolder, "veh_theta", veh_theta);
+  
+  }
 exit();
 }
 

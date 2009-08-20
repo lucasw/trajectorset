@@ -1,0 +1,4 @@
+veh_time veh_theta 0 10 -1 1
+veh_time veh_x 0 10 0 100
+veh_time veh_y 0 10 0 100
+veh_x veh_y 0 100 0 100

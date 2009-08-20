@@ -5,6 +5,26 @@ String names[];
 
 PFont font;
 
+class plot {
+  float xmin;
+  float xmax;
+  float ymin;
+  float ymax;
+  String xName;
+  String yName;
+  
+  plot(String xName, String yName, 
+        float xmin, float xmax, float ymin, float ymax) {
+    this.xmin = xmin;
+    this.xmax = xmax;
+    this.ymin = ymin;
+    this.ymax = ymax;
+    this.xName = xName;
+    this.yName = yName;
+  }
+};
+
+plot[] plots = new plot[0];
 
 void setup() {
   size(500,500);
@@ -12,35 +32,48 @@ void setup() {
   
   String dir = sketchPath + "/data";
   File file = new File(dir);
+ 
   
   font = createFont("Serif.bold",24);
   textFont(font);
 
   names = file.list();
   
+  String lines[] = loadStrings("config.csv");
+  for (int i = 0; i < lines.length; i++) {
+     
+    String tk[] = split(lines[i],' ');
+    if (tk.length == 6) {
+      plots = (plot[])append(plots, new plot(tk[0], tk[1], 
+                                              Float.parseFloat(tk[2]), 
+                                              Float.parseFloat(tk[3]),
+                                              Float.parseFloat(tk[4]),
+                                              Float.parseFloat(tk[5]) ) );
+    } else {
+       println("error config line: " + lines[i]);  
+    }
+    
+  }
+  
   background(0);
 }
 
-// TBD load these from config file
-float xmin = 0;
-float xmax = 100;
-float ymin = 0;
-float ymax = 100;
 
-int i = 0;
+
+
 
 //////////////////////////////////////////////////////////////////////////
 
-void drawPlot(double[][] matData, float weight) {
-  float dataMax = matData[0].length;
+void drawPlot(plot plotData, double[][] xMatData, double[][] yMatData, float weight, color col) {
+  
   //smooth();
   noFill();
-  stroke(255,255,255);
+  stroke(col);
   beginShape();
   strokeWeight(weight);
-  for (int j = 1; j < matData[0].length; j++) {
-       float y = (((float)(matData[0][j]) - xmin)/(xmax-xmin)) * height;
-       float x = width*(float)(j)/dataMax;
+  for (int j = 1; j < xMatData[0].length && j < yMatData[0].length; j++) {
+       float y = (((float)(xMatData[0][j]) - plotData.xmin)/(plotData.xmax-plotData.xmin)) * height;
+       float x = (((float)(yMatData[0][j]) - plotData.ymin)/(plotData.ymax-plotData.ymin)) * width;
        
        ///
        if (x >= width) x = width-1;
@@ -77,53 +110,66 @@ double[][] getData(String name, String matName) {
 
 void draw() {
   //TBD get array of a name  from file
-  String matName = "veh_x"; 
+  //String matName = "veh_x"; 
   
-  /// load or create the data buffer
-  byte[] data = loadBytes(matName + ".dat");
-  if ((data == null) /*|| (i == 0)*/)  data = new byte[(width*height+1)*4];
+  (new File(sketchPath + "/output/")).mkdir();
   
-  float numAgg = -1.0;
-  for (int nameInd=0; nameInd <names.length; nameInd++) {   
-    double[][] matData = getData(names[nameInd], matName);
-    if (matData == null) { 
-      println("error " + names[nameInd] + " was null");
-      continue;
-    }   
+  for (int i = 0; i < plots.length; i++) {
+  
+    /// load or create the data buffer
+    byte[] data = loadBytes("output/" +plots[i].xName + "_" + plots[i].yName + ".dat");
+    if ((data == null) /*|| (i == 0)*/)  data = new byte[(width*height+1)*4];
     
-    background(0);  
+    float numAgg = -1.0;
+    for (int nameInd=0; nameInd <names.length; nameInd++) {   
+      double[][] xMatData = getData(names[nameInd], plots[i].xName);
+      if (xMatData == null) { 
+        println("error " + names[nameInd] + " was null");
+        continue;
+      }   
+      
+      double[][] yMatData = getData(names[nameInd], plots[i].yName);
+      if (yMatData == null) { 
+        println("error " + names[nameInd] + "/" + plots[i].yName + " was null");
+        continue;
+      }  
+      
+      background(0);  
+      
+      drawPlot(plots[i],xMatData,yMatData,1,color(255,255,255));
+      
+      /////////////////////
+      /// now that drawing is done, aggregate the new plot with the saved one    
+      numAgg = updateDataAndPixels(data, true);
+  
+    } // name list
+    saveBytes("output/" + plots[i].xName + "_" + plots[i].yName + ".dat", data);
     
-    drawPlot(matData,1);
-    
-    /////////////////////
-    /// now that drawing is done, aggregate the new plot with the saved one    
-    numAgg = updateDataAndPixels(data, true);
-
-  } // name list
-  saveBytes(matName + ".dat", data);
-  
-  /// just draw the existing data even if there is nothing new 
-  if (names.length == 0) {
-    background(0);
-    /// TBD need to generate numAgg from saved file- put in last four bytes of data[]?
-    numAgg  = updateDataAndPixels(data,  false);     
-  }
-  println(numAgg + " runs with " + names.length  + " new runs aggregated");
-  
-  saveFrame("output_nohighlight.png");
-  
-  /// draw the latest data again to highlight it
-  for (int nameInd=0; nameInd <names.length; nameInd++) {   
-    double[][] matData = getData(names[nameInd], matName);
-    if (matData != null) {    
-      drawPlot(matData,2);
-      //text(nameInd, width-150,50);
+    /// just draw the existing data even if there is nothing new 
+    if (names.length == 0) {
+      background(0);
+      /// TBD need to generate numAgg from saved file- put in last four bytes of data[]?
+      numAgg  = updateDataAndPixels(data,  false);     
     }
-  }
-
-  text((int)numAgg + " runs with " + names.length  + " new runs",10,50);
+    println(numAgg + " runs with " + names.length  + " new aggregated");
+    
+    saveFrame("output/" + plots[i].xName + "_" + plots[i].yName + "_nohighlight.png");
+    
+    /// draw the latest data again to highlight it
+    for (int nameInd=0; nameInd <names.length; nameInd++) {   
+      double[][] xMatData = getData(names[nameInd], plots[i].xName);
+      double[][] yMatData = getData(names[nameInd], plots[i].yName);
+      if ((yMatData != null) && (xMatData !=null)) {      
+        drawPlot(plots[i],xMatData,yMatData,3,color(100,255,100,128));
+        //text(nameInd, width-150,50);
+      }
+    }
   
-  saveFrame("output.png");
+    text(plots[i].xName + " vs. " + plots[i].yName ,10,25);
+    text((int)numAgg + " runs with " + names.length  + " new runs",10,50);
+    
+    saveFrame("output/" + plots[i].xName + "_" + plots[i].yName + ".png");
+  }
  // nameInd++;
  // if (nameInd >= names.length) {
  //   noLoop();

@@ -14,6 +14,7 @@ class veh {
   
 };*/
 
+double[] veh_time = new double[tmax];
 double[] veh_x = new double[tmax];
 double[] veh_y = new double[tmax];
 double[] veh_vx = new double[tmax];
@@ -24,6 +25,7 @@ double[] veh_theta = new double[tmax];
 double[] veh_thetadot = new double[tmax];
 double[] veh_theta_target = new double[tmax];
 double[] veh_theta_target2 = new double[tmax];
+
 
 float tx = 40;
 float ty = 70;
@@ -41,6 +43,7 @@ void setup() {
   
   background(0);
   
+  veh_time[0] = 0;
   veh_x[0] = width/2;
   veh_y[0] = 0;
   veh_vx[0] = 0;
@@ -88,25 +91,28 @@ void draw() {
   noFill();
   beginShape();
   for (int t = 1; t < tmax; t++) {
+    
+    veh_time[t] = (float)t/50.0;
+    
     float fr = 0.6;
-  float windx = 0.020*((fr*noise(offset + 4.0*(float)veh_x[t-1]/(float)height, 4.0*(float)veh_y[t-1]/(float)width) + 
+    float windx = 0.020*((fr*noise(offset + 4.0*(float)veh_x[t-1]/(float)height, 4.0*(float)veh_y[t-1]/(float)width) + 
                        (1.0-fr)*noise(100+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width))-0.5);
-  float windy = 0.009*((fr*noise(1000+offset + 0.5*(float)veh_x[t-1]/(float)height, 0.5*(float)veh_y[t-1]/(float)width) + 
+    float windy = 0.009*((fr*noise(1000+offset + 0.5*(float)veh_x[t-1]/(float)height, 0.5*(float)veh_y[t-1]/(float)width) + 
                        (1.0-fr)*noise(1000+0.5*(float)veh_x[t-1]/(float)height, 100+0.5*(float)veh_y[t-1]/(float)width))-0.5);
-  offset += 10.0;                 
+    offset += 10.0;                 
                        
-  float dx = (float)(tx-veh_x[t-1]);
-  float dy = (float)(ty-veh_y[t-1]);
-  float dist2 = sqrt(dx*dx+dy*dy);
+    float dx = (float)(tx-veh_x[t-1]);
+    float dy = (float)(ty-veh_y[t-1]);
+    float dist2 = sqrt(dx*dx+dy*dy);
         
-  veh_theta_target[t] = atan2( dx,dy );
-  // TBD unwrap function
-  //veh_theta_target(1:t) = unwrap(veh_theta_target(1:t));
+    veh_theta_target[t] = atan2( dx,dy );
+    // TBD unwrap function
+    //veh_theta_target(1:t) = unwrap(veh_theta_target(1:t));
         
-  veh_theta_target2[t] = atan2((float)veh_vx[t-1],(float)veh_vy[t-1]);
-  //veh_theta_target2(1:t) = unwrap(veh_theta_target2(1:t));
+    veh_theta_target2[t] = atan2((float)veh_vx[t-1],(float)veh_vy[t-1]);
+    //veh_theta_target2(1:t) = unwrap(veh_theta_target2(1:t));
         
-  veh_thetadot[t] = 0.1*(veh_theta_target[t] - veh_theta[t-1] - 0.3*veh_theta_target2[t]);
+    veh_thetadot[t] = 0.1*(veh_theta_target[t] - veh_theta[t-1] - 0.3*veh_theta_target2[t]);
            
         if (veh_thetadot[t] > max_tdot)
             veh_thetadot[t] = max_tdot;
@@ -154,10 +160,11 @@ void draw() {
 
   String subfolder = "data/data" + seed + "/";
   String folder= sketchPath + "/" +subfolder;
-  //boolean success = (new File(folder)).mkdir();
+  boolean success = (new File(folder)).mkdir();
   //if (success) println("folder " + folder + " created");
   //else println("folder " + folder + " failed");
   
+  writeMat(subfolder, "veh_time", veh_time);
   writeMat(subfolder, "veh_x", veh_x);
   writeMat(subfolder, "veh_y", veh_y);
   writeMat(subfolder, "veh_theta", veh_theta);

@@ -75,11 +75,11 @@ while True:
         # extract the dnsname and the seed number from the message
         match = re.search("(.*)( )(\w+)", msg)
         dns_name = match.groups()[0]
-        seed = int(match.groups()[2])
-        print("DONE " + dns_name + " " +str(seed))
+        group_num = int(match.groups()[2])
+        print("DONE " + dns_name + " " +str(group_num))
 
         # now download the results to data
-        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" + str(seed) + " data/"
+        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" +str(group_num) + " data/"
         proc = subprocess.Popen(whole_cmd, shell=True, 
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -98,8 +98,17 @@ while True:
         print("plot2d: " + stderr)
 
         # copy results to /var/www
-        shutil.copy("output.png", "/var/www/output.png")
-        shutil.move("output.png", "output" + str(counter) + ".png")
+        # TBD use plot2d_aggregat config.csv
+        shutil.copy("output/veh_time_veh_x.png", "/var/www/veh_time_veh_x.png")
+        shutil.copy("output/veh_time_veh_y.png", "/var/www/veh_time_veh_y.png")
+        shutil.copy("output/veh_time_veh_theta.png", "/var/www/veh_time_veh_theta.png")
+        shutil.copy("output/veh_x_veh_y.png", "/var/www/veh_x_veh_y.png")
+
+        shutil.move("output/veh_time_veh_x.png", "veh_time_veh_x_" + str(counter) + ".png")
+        shutil.move("output/veh_time_veh_y.png", "veh_time_veh_y_" + str(counter) + ".png")
+        shutil.move("output/veh_time_veh_theta.png", "veh_time_veh_theta_" + str(counter) + ".png")
+        shutil.move("output/veh_x_veh_y.png", "veh_x_veh_y_" + str(counter) + ".png")
+        
         shutil.move("data", "dataused/data" + str(counter))
         counter += 1
 

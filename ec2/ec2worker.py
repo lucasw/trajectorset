@@ -29,30 +29,33 @@ try:
 except:
     pass
 
-
 counter = 0
 while True:
+
     rs = startq.get_messages()
     if len(rs) > 0:
+    
         m = rs[0]
         msg = m.get_body()
 
         startq.delete_message(m)
         counter += 1
 
+                # TBD need to get multiple seeds here
         seed = -1
         # do a re match one START seed_num, and extract seed_num
-        match = re.search("(START )(.*)",msg)
-        seed = int(match.groups()[1])
-        if (seed == None) or (seed < 0):
-            log("bad seed " + str(seed)) 
-            continue
+        seeds = msg.split(' ') 
+        #seed = int(match.groups()[1])
+        #if (seed == None) or (seed < 0):
+        #    log("bad seed " + str(seed)) 
+        #    continue
         
         log("processing seed " + str(seed)) 
 
         # create a config.csv file with the seed in it
         f = open("config.csv","w")
-        f.write("seed " + str(seed) + "\n")
+        for seed in seeds[1:]:
+            f.write("seed " + seed + "\n")
         f.close()
 
         # run the traj_2d on it
@@ -69,12 +72,11 @@ while True:
             os.mkdir("archive")
         except:
             pass
-        #os.mkdir("archive/data" + str(seed))
-        shutil.move("data","archive/data" + str(seed))  
+        shutil.move("data","archive/data" + str(counter))  
         os.mkdir("data")
 
         m = boto.sqs.Message()
-        m.set_body(os.environ['DNS'] + ' ' + str(seed))
+        m.set_body(os.environ['DNS'] + ' ' + str(counter))
         doneq.write(m)
     else:
         time.sleep(1)

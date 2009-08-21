@@ -23,7 +23,7 @@ import javax.vecmath.*;
 
 boolean doSave = false;
  /// 30 fps * 60 seconds = 1800 frames max
- final static int COUNT_MAX = 2000;
+ final static int COUNT_MAX = 200;
 
 float angle;
 
@@ -401,7 +401,7 @@ void draw() {
       txb[i*4+1] = (byte) ((bits >> 8)  & 0xff);
       txb[i*4+2] = (byte) ((bits >> 16) & 0xff);
       txb[i*4+3] = (byte) ((bits >> 24) & 0xff);
-    }
+    }*/
     
     //print(millis()-now + " ");
     saveBytes(binfilename, txb);

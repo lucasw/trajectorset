@@ -29,7 +29,10 @@ whole_cmd="""echo "
 <meta http-equiv=\\"REFRESH\\" content=\\"2\\">
 <title>Results</title>
 
-<img src=\\"output.png\\"></img>
+<img src=\\"veh_time_veh_x.png\\"></img>
+<img src=\\"veh_time_veh_y.png\\"></img>
+<img src=\\"veh_time_veh_theta.png\\"></img>
+<img src=\\"veh_x_veh_y.png\\"></img>
 </html>" > /var/www/index.lighttpd.html 
 """
 proc = subprocess.Popen(whole_cmd, shell=True, 
@@ -39,16 +42,18 @@ proc = subprocess.Popen(whole_cmd, shell=True,
 print("make html: " + stdout)
 print("make html: " + stderr)
 
-max_seed = 500
 # number of seeds to have in queue
+max_seed = 500
 # TBD make proportional to number of workers
-#num_seeds = 10
-
-
-print("making " + str(max_seed) + " seeds messages")
-for seed in range (0, max_seed):
+step = 10
+print("making " + str(max_seed/step) + " seeds messages for " + str(max_seed) + " seeds")
+for seed in range(0, max_seed,step):
     m = boto.sqs.Message()
-    m.set_body('START ' + str(seed))
+    # TBD need to put multiple seeds here
+    msg = 'START'
+    for offset in range (0,step):
+        msg += ' ' + str(seed+offset)
+    m.set_body(msg)
     startq.write(m)
 
 try:
@@ -61,7 +66,7 @@ counter = 10000000
 print("starting processing loop")
 while True:
     try:
-    	os.mkdir("data")
+    	os.mkdir("datanew")
     except OSError:
         pass
     rs = doneq.get_messages()
@@ -79,14 +84,15 @@ while True:
         print("DONE " + dns_name + " " +str(group_num))
 
         # now download the results to data
-        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" +str(group_num) + " data/"
+        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" +str(group_num) + " datanew/"
         proc = subprocess.Popen(whole_cmd, shell=True, 
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) = proc.communicate()
         print("scp: " + stdout)
         print("scp: " + stderr)
-
+        shutil.move("datanew/data" + str(group_num), "data")
+    
     # if there are few new data files
     if len(rs) > 0:
         # run plot2d_aggregate

@@ -84,7 +84,7 @@ print("starting instances")
 reservation_head = image.run(1,1,security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
-reservation_worker = image.run(3,8)
+reservation_worker = image.run(1,2)
 #inst_workers = reservation_worker.instances
 
 print("waiting for instances to run")
@@ -122,13 +122,13 @@ dns_name = inst_head.dns_name
 setup_node(dns_name)
 # need the pem so the head node can scp files from workers
 scp_cmd(dns_name, "~/lucasw.pem")
+scp_cmd(dns_name, "../plot2d_aggregate/config.csv")
 
 execname = "plot2d_aggregate"
 zipname = execname + ".zip"
 scriptname = "ec2head.py"
 startup(dns_name, zipname, scriptname, execname)
-
-   #utility functions in here
+print("<a href=\"http://" + dns_name + "\">http://" + dns_name + "</a>")
 
 # ssh in and export the AWS keys, start Xvfb, get them started
 print("setting up worker nodes")

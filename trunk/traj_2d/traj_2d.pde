@@ -156,7 +156,8 @@ void draw() {
   }
   endShape();
   
-  saveFrame("data/output" + seed + ".png");
+  
+ //saveFrame("data/output" + seed + ".png");
 
   String subfolder = "data/data" + seed + "/";
   String folder= sketchPath + "/" +subfolder;

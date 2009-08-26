@@ -84,8 +84,7 @@ print("starting instances")
 reservation_head = image.run(1,1,security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
-reservation_worker = image.run(1,2)
-#inst_workers = reservation_worker.instances
+reservation_worker = image.run(3,7)
 
 print("waiting for instances to run")
 # wait for most to finish
@@ -128,7 +127,7 @@ execname = "plot2d_aggregate"
 zipname = execname + ".zip"
 scriptname = "ec2head.py"
 startup(dns_name, zipname, scriptname, execname)
-print("<a href=\"http://" + dns_name + "\">http://" + dns_name + "</a>")
+print("http://" + dns_name)
 
 # ssh in and export the AWS keys, start Xvfb, get them started
 print("setting up worker nodes")

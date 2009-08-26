@@ -50,7 +50,7 @@ while True:
         #    log("bad seed " + str(seed)) 
         #    continue
         
-        log("processing seed " + str(seed)) 
+        log("processing seed " + msg) 
 
         # create a config.csv file with the seed in it
         f = open("config.csv","w")
@@ -64,8 +64,8 @@ while True:
                                     stdout=subprocess.PIPE, 
                                     stderr=subprocess.PIPE)
         (stdout,stderr) = proc.communicate() 
-        print("traj_2d: " + stdout)
-        print("traj_2d: " + stderr)
+        log("traj_2d: " + stdout)
+        log("traj_2d: " + stderr)
 
         # move the output files into data[seed_num] folder
         try:
@@ -79,5 +79,6 @@ while True:
         m.set_body(os.environ['DNS'] + ' ' + str(counter))
         doneq.write(m)
     else:
+        log("no messages")
         time.sleep(1)
         # finished, loop and move on to next message

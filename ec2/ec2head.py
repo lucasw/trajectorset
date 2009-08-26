@@ -20,7 +20,6 @@ doneq  = conn.create_queue('doneq')
 doneq.clear()
 
 
-# to start create a bunch of start message, proportional to the size
 
 # create an html file 
 # TBD may want to run this every cycle to change text on the page
@@ -42,8 +41,9 @@ proc = subprocess.Popen(whole_cmd, shell=True,
 print("make html: " + stdout)
 print("make html: " + stderr)
 
+# to start create a bunch of start message, proportional to the size
 # number of seeds to have in queue
-max_seed = 500
+max_seed = 5000
 # TBD make proportional to number of workers
 step = 10
 print("making " + str(max_seed/step) + " seeds messages for " + str(max_seed) + " seeds")

@@ -34,7 +34,7 @@ void setup() {
   File file = new File(dir);
  
   
-  font = createFont("Serif.bold",24);
+  font = createFont("Serif.bold",12);
   textFont(font);
 
   names = file.list();
@@ -136,7 +136,7 @@ void draw() {
       
       background(0);  
       
-      drawPlot(plots[i],xMatData,yMatData,1,color(255,255,255));
+      drawPlot(plots[i],yMatData,xMatData,1,color(255,255,255));
       
       /////////////////////
       /// now that drawing is done, aggregate the new plot with the saved one    
@@ -160,13 +160,13 @@ void draw() {
       double[][] xMatData = getData(names[nameInd], plots[i].xName);
       double[][] yMatData = getData(names[nameInd], plots[i].yName);
       if ((yMatData != null) && (xMatData !=null)) {      
-        drawPlot(plots[i],xMatData,yMatData,3,color(100,255,100,128));
+        drawPlot(plots[i],yMatData,xMatData,3,color(100,255,100,128));
         //text(nameInd, width-150,50);
       }
     }
   
-    text(plots[i].xName + " vs. " + plots[i].yName ,10,25);
-    text((int)numAgg + " runs with " + names.length  + " new runs",10,50);
+    text(plots[i].xName + " vs. " + plots[i].yName ,10,13);
+    text((int)numAgg + " runs with " + names.length  + " new runs",10,26);
     
     saveFrame("output/" + plots[i].xName + "_" + plots[i].yName + ".png");
   }

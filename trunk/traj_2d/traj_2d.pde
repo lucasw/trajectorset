@@ -1,7 +1,7 @@
 import com.jmatio.io.*;
 import com.jmatio.types.*;
 
-int tmax = 450;
+int tmax = 500;
 float gravity = -0.0020;
 float acc = 0.0045;
 

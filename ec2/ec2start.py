@@ -84,7 +84,7 @@ print("starting instances")
 reservation_head = image.run(1,1,security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
-reservation_worker = image.run(3,7)
+reservation_worker = image.run(2,4)
 
 print("waiting for instances to run")
 # wait for most to finish

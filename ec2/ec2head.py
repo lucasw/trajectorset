@@ -9,6 +9,7 @@ import re
 import shutil
 import time
 import boto
+import glob
 
 print("connecting to sqs")
 conn = boto.connect_sqs()
@@ -58,6 +59,7 @@ for seed in range(0, max_seed,step):
 
 try:
     os.mkdir("dataused")
+    os.mkdir("data")
 except:
     pass
 
@@ -66,14 +68,20 @@ counter = 10000000
 print("starting processing loop")
 while True:
     try:
-    	os.mkdir("datanew")
+        os.mkdir("datanew")
     except OSError:
         pass
-    rs = doneq.get_messages()
-    # TBD may not want to process all the messages, if it will take 
+    rs = doneq.get_messages(5)
+    # may not want to process all the messages, if it will take 
     # longer than a few seconds- would rather do only a few
     # and more quickly update
+    msg_counter = 0
+    print(str(len(rs)) + " unprocessed messages")
     for m in rs:
+        msg_counter +=1
+        if (msg_counter > 5):
+            break
+
         msg = m.get_body()
         doneq.delete_message(m)
         
@@ -81,7 +89,7 @@ while True:
         match = re.search("(.*)( )(\w+)", msg)
         dns_name = match.groups()[0]
         group_num = int(match.groups()[2])
-        print("DONE " + dns_name + " " +str(group_num))
+        print("processing from " + dns_name + " " +str(group_num))
 
         # now download the results to data
         whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" +str(group_num) + " datanew/"
@@ -91,7 +99,9 @@ while True:
         (stdout,stderr) = proc.communicate()
         print("scp: " + stdout)
         print("scp: " + stderr)
-        shutil.move("datanew/data" + str(group_num), "data")
+        datalist = glob.glob("datanew/data" + str(group_num) + "/*")
+        for newdatafile in datalist:
+            shutil.move(newdatafile, "data")
     
     # if there are few new data files
     if len(rs) > 0:
@@ -116,7 +126,8 @@ while True:
         shutil.move("output/veh_x_veh_y.png", "veh_x_veh_y_" + str(counter) + ".png")
         
         shutil.move("data", "dataused/data" + str(counter))
+        os.mkdir("data")
         counter += 1
-
-    # finished, loop and move on to next messages after pausing
-    time.sleep(2)
+    else:
+        # finished, loop and move on to next messages after pausing
+        time.sleep(2)

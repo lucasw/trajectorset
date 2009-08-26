@@ -27,9 +27,9 @@ class plot {
 plot[] plots = new plot[0];
 
 void setup() {
-  size(500,500);
+  size(640,360);
   //smooth();
-  
+ 
   String dir = sketchPath + "/data";
   File file = new File(dir);
  
@@ -59,9 +59,6 @@ void setup() {
 }
 
 
-
-
-
 //////////////////////////////////////////////////////////////////////////
 
 void drawPlot(plot plotData, double[][] xMatData, double[][] yMatData, float weight, color col) {
@@ -72,8 +69,8 @@ void drawPlot(plot plotData, double[][] xMatData, double[][] yMatData, float wei
   beginShape();
   strokeWeight(weight);
   for (int j = 1; j < xMatData[0].length && j < yMatData[0].length; j++) {
-       float y = (((float)(xMatData[0][j]) - plotData.xmin)/(plotData.xmax-plotData.xmin)) * height;
-       float x = (((float)(yMatData[0][j]) - plotData.ymin)/(plotData.ymax-plotData.ymin)) * width;
+       float x = (((float)(xMatData[0][j]) - plotData.xmin)/(plotData.xmax-plotData.xmin)) * width;
+       float y = (((float)(yMatData[0][j]) - plotData.ymin)/(plotData.ymax-plotData.ymin)) * height;
        
        ///
        if (x >= width) x = width-1;
@@ -136,7 +133,7 @@ void draw() {
       
       background(0);  
       
-      drawPlot(plots[i],yMatData,xMatData,1,color(255,255,255));
+      drawPlot(plots[i],xMatData,yMatData,1,color(255,255,255));
       
       /////////////////////
       /// now that drawing is done, aggregate the new plot with the saved one    
@@ -160,11 +157,12 @@ void draw() {
       double[][] xMatData = getData(names[nameInd], plots[i].xName);
       double[][] yMatData = getData(names[nameInd], plots[i].yName);
       if ((yMatData != null) && (xMatData !=null)) {      
-        drawPlot(plots[i],yMatData,xMatData,3,color(100,255,100,128));
+        drawPlot(plots[i],xMatData,yMatData,3,color(100,255,100,128));
         //text(nameInd, width-150,50);
       }
     }
   
+    fill(128,128,128,100);
     text(plots[i].xName + " vs. " + plots[i].yName ,10,13);
     text((int)numAgg + " runs with " + names.length  + " new runs",10,26);
     

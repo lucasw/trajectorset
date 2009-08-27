@@ -157,7 +157,7 @@ void draw() {
       double[][] xMatData = getData(names[nameInd], plots[i].xName);
       double[][] yMatData = getData(names[nameInd], plots[i].yName);
       if ((yMatData != null) && (xMatData !=null)) {      
-        drawPlot(plots[i],xMatData,yMatData,3,color(100,255,100,128));
+        drawPlot(plots[i],xMatData,yMatData,2,color(100,255,100,64));
         //text(nameInd, width-150,50);
       }
     }

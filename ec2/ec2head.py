@@ -44,7 +44,7 @@ print("make html: " + stderr)
 
 # to start create a bunch of start message, proportional to the size
 # number of seeds to have in queue
-max_seed = 5000
+max_seed = 20000
 # TBD make proportional to number of workers
 step = 10
 print("making " + str(max_seed/step) + " seeds messages for " + str(max_seed) + " seeds")

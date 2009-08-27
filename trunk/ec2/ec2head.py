@@ -68,7 +68,7 @@ counter = 10000000
 print("starting processing loop")
 while True:
     try:
-        os.mkdir("datanew")
+        os.mkdir("groupnew")
     except OSError:
         pass
     rs = doneq.get_messages(5)
@@ -92,14 +92,16 @@ while True:
         print("processing from " + dns_name + " " +str(group_num))
 
         # now download the results to data
-        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/data" +str(group_num) + " datanew/"
+        whole_cmd = "scp -i /mnt/lucasw.pem -o StrictHostKeyChecking=no -r root@" + dns_name + ":/mnt/archive/group" +str(group_num) + " groupnew/"
         proc = subprocess.Popen(whole_cmd, shell=True, 
                                 stdin=subprocess.PIPE, 
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout,stderr) = proc.communicate()
         print("scp: " + stdout)
         print("scp: " + stderr)
-        datalist = glob.glob("datanew/data" + str(group_num) + "/*")
+        # move each individual file into data out of the group dir,
+        # so the aggregate exec can find them all
+        datalist = glob.glob("groupnew/group" + str(group_num) + "/data*")
         for newdatafile in datalist:
             shutil.move(newdatafile, "data")
     

@@ -66,7 +66,20 @@ def startup(dns_name, zipname, scriptname, execname):
     
     ssh_cmd(dns_name, cmd)
     ssh_detach_cmd(dns_name,"./test.sh")
- 
+
+def setup_head(inst_head):
+    print("setting up head node")
+    dns_name = inst_head.dns_name
+    setup_node(dns_name)
+    # need the pem so the head node can scp files from workers
+    scp_cmd(dns_name, "~/lucasw.pem")
+    scp_cmd(dns_name, "../plot2d_aggregate/config.csv")
+
+    execname = "plot2d_aggregate"
+    zipname = execname + ".zip"
+    scriptname = "ec2head.py"
+    startup(dns_name, zipname, scriptname, execname)
+    print("http://" + dns_name + "\n")
 
 ###########################################################
 ###########################################################
@@ -78,10 +91,14 @@ conn = boto.connect_ec2()
 print("finding ami")
 
 images = conn.get_all_images('ami-b15bbad8')
-# TBD error check
+# TBD add error check
 image = images[0]
 print("starting instances")
-reservation_head = image.run(1,1,security_groups=['default','http'])
+# use c1.medium for the head
+# the aggregation takes a lot more cpu than the worker node app,
+# though for real applications the worker app will be slower
+reservation_head = image.run(1,1,instance_type='c1.medium',
+                             security_groups=['default','http'])
 inst_head = reservation_head.instances[0]
 
 reservation_worker = image.run(2,4)
@@ -101,6 +118,10 @@ while not all_finished:
         all_finished = False
         unfinished_count +=1
     else:
+        # usually the head starts first, so give the workers
+        # more time by running the startup scripts
+        if not head_finished:
+            setup_head(inst_head)
         head_finished = True
 
     for worker in reservation_worker.instances:
@@ -115,19 +136,6 @@ while not all_finished:
         all_finished = True
 
 #StrictHostKeyChecking=no
-
-print("setting up head node")
-dns_name = inst_head.dns_name
-setup_node(dns_name)
-# need the pem so the head node can scp files from workers
-scp_cmd(dns_name, "~/lucasw.pem")
-scp_cmd(dns_name, "../plot2d_aggregate/config.csv")
-
-execname = "plot2d_aggregate"
-zipname = execname + ".zip"
-scriptname = "ec2head.py"
-startup(dns_name, zipname, scriptname, execname)
-print("http://" + dns_name)
 
 # ssh in and export the AWS keys, start Xvfb, get them started
 print("setting up worker nodes")

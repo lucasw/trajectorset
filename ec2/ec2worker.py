@@ -29,7 +29,7 @@ try:
 except:
     pass
 
-counter = 0
+group_num = 0
 while True:
 
     rs = startq.get_messages()
@@ -39,7 +39,7 @@ while True:
         msg = m.get_body()
 
         startq.delete_message(m)
-        counter += 1
+        group_num += 1
 
                 # TBD need to get multiple seeds here
         seed = -1
@@ -72,11 +72,11 @@ while True:
             os.mkdir("archive")
         except:
             pass
-        shutil.move("data","archive/data" + str(counter))  
+        shutil.move("data","archive/group" + str(group_num))  
         os.mkdir("data")
 
         m = boto.sqs.Message()
-        m.set_body(os.environ['DNS'] + ' ' + str(counter))
+        m.set_body(os.environ['DNS'] + ' ' + str(group_num))
         doneq.write(m)
     else:
         log("no messages")

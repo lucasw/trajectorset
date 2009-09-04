@@ -86,11 +86,8 @@ def setup_head(inst_head):
 
 conn = boto.connect_ec2()
 
-# launch 20 or so instance of this type
-#ami-b15bbad8
 print("finding ami")
-
-images = conn.get_all_images('ami-b15bbad8')
+images = conn.get_all_images('ami-2bfd1d42')
 # TBD add error check
 image = images[0]
 print("starting instances")

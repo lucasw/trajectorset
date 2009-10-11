@@ -57,6 +57,9 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   vehicle.newRot = udpRot;
   vehicle.newVel = udpVel;
   
+  /// give the vehicle all the udp data
+  vehicle.udpRaw = rxx;
+  
  
 }
 
@@ -219,6 +222,38 @@ Quaternion pointQuat(Vec3D aim) {
   return new_rot;
 }
    
+   void drawArrow(float len, float rad, color col ) {
+  pushMatrix();
+        
+  noStroke();
+ 
+  fill(col);
+    
+      /// body drawing
+      int sides = 8;
+      float angleIncrement = TWO_PI/sides;
+      float angle = 0;  
+      
+      /// draw cylind
+      beginShape(TRIANGLE_STRIP);
+       for (int i = 0; i < sides + 1; i++) {
+        vertex(0, rad * cos(angle),  rad * sin(angle));
+        vertex( len, rad * cos(angle),  rad * sin(angle));
+        angle += angleIncrement;
+      }
+      endShape();
+      
+      beginShape(TRIANGLE_FAN);
+      // Center point
+      vertex(len*1.3, 0, 0);
+      for (int i = 0; i < sides + 1; i++) {
+        vertex(len, rad*2 * cos(angle),  rad*2 * sin(angle));
+        angle += angleIncrement;
+      }
+      endShape();  
+
+  popMatrix();  
+}
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////  
 ////////////////////////////////////////////////////////////////////////////////////
@@ -252,6 +287,9 @@ class movable {
   // inertia?  Used to moment of inertia matrices.
   // see http://www.mathworks.com/access/helpdesk/help/toolbox/aeroblks/index.html?/access/helpdesk/help/toolbox/aeroblks/simplevariablemass6dofquaternion.html&http://www.google.com/search?client=firefox-a&rls=org.mozilla%3Aen-US%3Aofficial&channel=s&hl=en&q=quaternion+inertia&btnG=Google+Search
   Vec3D pqr;
+  
+  movableVector[] movableVectors;
+  float[] udpRaw;
   
   /// move the movable with another movable
   boolean posTracking = false;
@@ -315,6 +353,8 @@ class movable {
     
      offset = new Vec3D(0,0,0);
      offsetVel = new Vec3D(0,0,0);
+     
+     movableVectors = new movableVector[0];
   }
   
   
@@ -508,38 +548,39 @@ class movable {
   {
     drawHistory();
     
+    /// draw velocity vectors
     pushMatrix();
-    
-        applyMatrix( 1, 0, 0, (float)pos.x,  
+    applyMatrix( 1, 0, 0, (float)pos.x,  
                  0, 1, 0, (float)pos.y,  
                  0, 0, 1, (float)pos.z,  
                  0, 0, 0, 1  ); 
 
     float rad = 3;
     drawArrow(vel.x/10.0,  rad, color(100,105,155) );
-      pushMatrix();
-      applyMatrix( 0, 1, 0, 0,  
-                   0, 0, 1, 0,  
-                   1, 0, 0, 0,
-                   0, 0, 0, 1  ); 
-      drawArrow(vel.z/10.0, rad, color(100,155,0));
-      popMatrix();
-      pushMatrix();
-       applyMatrix( 0, 1, 0, 0,  
-                    1, 0, 0, 0,  
-                    0, 0, 1, 0,
-                    0, 0, 0, 1  ); 
-      drawArrow(vel.y/10.0, rad, color(155,100,0));
-      popMatrix();
+    pushMatrix();
+    applyMatrix( 0, 1, 0, 0,  
+                 0, 0, 1, 0,  
+                 1, 0, 0, 0,
+                 0, 0, 0, 1  ); 
+    drawArrow(vel.z/10.0, rad, color(100,155,0));
+    popMatrix();
+    pushMatrix();
+    applyMatrix( 0, 1, 0, 0,  
+                 1, 0, 0, 0,  
+                 0, 0, 1, 0,
+                 0, 0, 0, 1  ); 
+    drawArrow(vel.y/10.0, rad, color(155,100,0));
+    popMatrix();
       
     popMatrix();
   }
     
     if (true) {
+      
+    /// draw arrows to show movable orientation
     pushMatrix();
  
     apply();
-
     float len = 60;
     float rad = 7;
     drawArrow(len*2.5,  rad*1.5, color(100,105,255) );
@@ -558,6 +599,16 @@ class movable {
       drawArrow(len, rad, color(255,0,0));
       popMatrix();
 
+      /// draw movableVectors
+      for (int i = 0; i < movableVectors.length(); i++) {
+         if (udpRaw.length > movableVectors[i].udpInd) {
+            movableVectors[i].len = udpRaw[movableVectors[i].udpInd];
+            pushMatrix();
+            movableVectors[i].draw();
+            popMatrix();
+         } 
+        
+      }
 
     popMatrix();
     }

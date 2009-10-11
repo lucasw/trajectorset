@@ -13,7 +13,6 @@ PFont font;
 
 /// offline rendering
 boolean offline = false;
-
 boolean textHud = true;
 
 body vehicle; 
@@ -27,40 +26,53 @@ boolean useAutoFov = true;
 
 UDP udp;
 
-void drawArrow(float len, float rad, color col ) {
-  pushMatrix();
-        
-  noStroke();
- 
-  fill(col);
+/// these are arbitrary movable relative vectors to be drawn with
+/// udp data
+class movableVectors {
+  /// what part of the udp stream of floats the length data comes from
+  int udpInd;
+  color col;
+  /// scale factor
+  float sc;
+  /// arrow radius
+  float rad;
+  
+  Vec3D pos;
+  Quaternion rot;
+  
+  /// the current length, update by udp
+  float len;
+  
+  void draw() {
+    apply(); 
+    drawArrow(len*sc,  rad, color(col) );
+  }
+  
+   void apply() {
     
-      /// body drawing
-      int sides = 8;
-      float angleIncrement = TWO_PI/sides;
-      float angle = 0;  
-      
-      /// draw cylind
-      beginShape(TRIANGLE_STRIP);
-       for (int i = 0; i < sides + 1; i++) {
-        vertex(0, rad * cos(angle),  rad * sin(angle));
-        vertex( len, rad * cos(angle),  rad * sin(angle));
-        angle += angleIncrement;
-      }
-      endShape();
-      
-      beginShape(TRIANGLE_FAN);
-      // Center point
-      vertex(len*1.3, 0, 0);
-      for (int i = 0; i < sides + 1; i++) {
-        vertex(len, rad*2 * cos(angle),  rad*2 * sin(angle));
-        angle += angleIncrement;
-      }
-      endShape();  
+    applyMatrix( 1, 0, 0, (float)pos.x,  
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+                 
+                   
+    Matrix4x4 m = rot.getMatrix();
 
-  popMatrix();  
+    applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
+                 (float)m.matrix[1][0], (float)m.matrix[1][1], (float)m.matrix[1][2], 0,  
+                 (float)m.matrix[2][0], (float)m.matrix[2][1], (float)m.matrix[2][2], 0,  
+                 (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  ); 
+         
+         /*        
+    applyMatrix( 1, 0, 0, (float)offset.x,  
+                 0, 1, 0, (float)offset.y,  
+                 0, 0, 1, (float)offset.z,  
+                 0, 0, 0, 1  ); 
+                 */
+  }
 }
 
-
+////////////////////////////////////////////////////////
 
 void setup() {
   size(800,600,P3D); 
@@ -72,10 +84,43 @@ void setup() {
   udp = new UDP( this, 6100 );
   udp.listen(true);
   
+
+  
+  
   vehicle = new body();
   vehicle.pos.x = 50;
   vehicle.pos.y = 50;
   vehicle.pos.z = 500;
+  
+  /// load config file
+  lines = loadStrings("config.txt");
+  int index = 0;
+  if (index < lines.length) {
+    String[] pieces = split(lines[index], '\t');
+    if (pieces.length > 14) {
+      movableVector mv = new movableVector();
+      mv.name = pieces[0];
+      mv.udpInd = int(pieces[1]);
+      mv.col = new color(int(pieces[2]), int(pieces[3]), int(pieces[4]) );
+      mv.sc = Float.valueOf(pieces[5]).floatValue();
+      mv.rad = Float.valueOf(pieces[6]).floatValue();  
+      mv.len = Float.valueOf(pieces[7]).floatValue();  
+      
+      mv.pos = new Vec3D( Float.valueOf(pieces[8]).floatValue(),
+                          Float.valueOf(pieces[9]).floatValue(),
+                          Float.valueOf(pieces[10]).floatValue() );
+                          
+      mv.rot = new Quaternion(Float.valueOf(pieces[11]).floatValue(),
+                  new Vec3D(Float.valueOf(pieces[12]).floatValue(),
+                            Float.valueOf(pieces[13]).floatValue(),
+                            Float.valueOf(pieces[14]).floatValue() ) );
+  
+      vehicle.movableVectors = append(vehicle.movableVectors, mv);  
+    }
+    // Go to the next line for the next run through draw()
+    index = index + 1;
+  }
+  
   
   vehicle.rot = vehicle.rot.multiply(new Quaternion(cos(-PI/4),new Vec3D(0,0,sin(-PI/4))));
   

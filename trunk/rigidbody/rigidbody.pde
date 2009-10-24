@@ -53,14 +53,55 @@ class movableVector {
   
   /// the current length, update by udp
   float len;
+
+  ///////////////////////////// 
+  //  draw text hud 
+  void drawHud(Quaternion parentRot){ 
+    pushMatrix();
+                 
+      
+    applyMatrix( 1, 0, 0, (float)pos.x,  
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+                                   applyMatrix( 1, 0, 0, (float)aim.x*scPos,  
+                 0, 1, 0, (float)aim.y*scPos,  
+                 0, 0, 1, (float)aim.z*scPos,  
+                 0, 0, 0, 1  ); 
+
+    Matrix4x4 m;         
+    m = parentRot.getMatrix(); 
+    applyMatrix( (float)m.matrix[0][0], (float)m.matrix[1][0], (float)m.matrix[2][0], 0,  
+                 (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
+                 (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
+                 (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  );   
+               
+               
+    m = cam.rot.getMatrix(); 
+    applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
+                 (float)m.matrix[1][0], (float)m.matrix[1][1], (float)m.matrix[1][2], 0,  
+                 (float)m.matrix[2][0], (float)m.matrix[2][1], (float)m.matrix[2][2], 0,  
+                 (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  );  
+        if (textHud) {
+                     scale(0.22);
+                     String sa = nfs(len,4,1);
+                     text(" " + name + "\n" + sa, 0,  50);
+                   }              
+    popMatrix();  
+  }
+  ////////////////////////////////
   
-  void draw(Vec3D parentPos) {
+  void draw() {
     
      pushMatrix();
          
     applyMatrix( 1, 0, 0, (float)pos.x,  
                  0, 1, 0, (float)pos.y,  
                  0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+                     applyMatrix( 1, 0, 0, (float)aim.x*scPos,  
+                 0, 1, 0, (float)aim.y*scPos,  
+                 0, 0, 1, (float)aim.z*scPos,  
                  0, 0, 0, 1  ); 
                  
                  strokeWeight(2.0);
@@ -89,13 +130,12 @@ class movableVector {
     //line(0,0,0, 10, 0, 0);
     
     drawArrow(len*sc, rad, color(col) );
-       if (textHud) {
-                     scale(0.22);
-                     String sa = nfs(len,4,1);
-                     text(name + " " + sa, 0,  50);
-                   }
+   
   
     popMatrix();
+   
+   
+
   }
   
    void apply() {
@@ -109,8 +149,7 @@ class movableVector {
                  0, 0, 1, (float)aim.z*scPos,  
                  0, 0, 0, 1  ); 
                     
-    Matrix4x4 m = pointMat(aim);              
-      
+    Matrix4x4 m = pointMat(aim);                 
       
     applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
                  (float)m.matrix[1][0], (float)m.matrix[1][1], (float)m.matrix[1][2], 0,  
@@ -129,10 +168,7 @@ class movableVector {
                  (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
                  (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  );  
                
- */
-        
-         
-
+ */      
   }
 }
 
@@ -146,10 +182,7 @@ void setup() {
   textFont(font, 32);
   
   udp = new UDP( this, 6100 );
-  udp.listen(true);
-  
-
-  
+  udp.listen(true); 
   
   vehicle = new body();
   vehicle.pos.x = 50;
@@ -160,7 +193,7 @@ void setup() {
   String[] lines = loadStrings("config.txt");
   int index = 0;
   
-  for (index =0; index < lines.length; index++) {
+  for (index = 0; index < lines.length; index++) {
     String[] pieces = split(lines[index], '\t');
     if ((pieces.length > 14) && (pieces[0].charAt(0) != '#')) {
       movableVector mv = new movableVector();
@@ -531,22 +564,16 @@ void draw() {
   ///////////////////////////////////////////
   // update
   
-
   /////////////////////////////////////////
-  
-
-  
-  
-  /// draw
-  
+  /// draw 
   pushMatrix();
   translate(width/2,height/2); 
 
   //background(128);
   /// the camera needs an applyInverse()
-   cam.applyInv();
-     drawSky();
-     drawGround();
+  cam.applyInv();
+  drawSky();
+  drawGround();
     //drawGrid();
   land.draw();
 

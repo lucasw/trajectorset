@@ -608,11 +608,9 @@ class movable {
             movableVectors[i].len = udpRaw[movableVectors[i].udpInd];
 
          } 
-         movableVectors[i].draw(pos);
-         
-
+         movableVectors[i].draw();
+         movableVectors[i].drawHud(rot);
       }
-
     popMatrix();
     }
   }

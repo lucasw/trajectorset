@@ -1,0 +1,3 @@
+#name	udp	r	g	b	scpos	sc	rad	len	posx	posy	posz	aimx	aimy	aimz
+test1	10	150	250	10	12.00	0.5	4	10	5.0000	3.0000	0.0000	-1.0	0.00	0.0
+test2	11	150	230	20	12.00	0.5	4	10	5.0000	-3.0000	2.0000	1.0	0.0	0.0

@@ -3,6 +3,13 @@ binarymillenium
 GPL v3.0
 June 2009
 
+Dependencies
+hypermedia udp library
+http://ubaa.net/shared/processing/udp/
+
+toxi geom library
+http://toxiclibs.googlecode.com/files/toxiclibscore-0014.zip
+
 */
 import hypermedia.net.*;
 import processing.opengl.*;
@@ -20,7 +27,7 @@ movable cam;
 
 terrain land;
 
-float fov = PI/2;
+float fov = PI/3;
 float autoFov = 1.0;
 boolean useAutoFov = true;
 
@@ -28,24 +35,67 @@ UDP udp;
 
 /// these are arbitrary movable relative vectors to be drawn with
 /// udp data
-class movableVectors {
+class movableVector {
   /// what part of the udp stream of floats the length data comes from
   int udpInd;
   color col;
   /// scale factor
   float sc;
+  float scPos;
   /// arrow radius
   float rad;
   
+  String name;
+  
   Vec3D pos;
-  Quaternion rot;
+  Vec3D aim;
+  //Quaternion rot;
   
   /// the current length, update by udp
   float len;
   
-  void draw() {
-    apply(); 
-    drawArrow(len*sc,  rad, color(col) );
+  void draw(Vec3D parentPos) {
+    
+     pushMatrix();
+         
+    applyMatrix( 1, 0, 0, (float)pos.x,  
+                 0, 1, 0, (float)pos.y,  
+                 0, 0, 1, (float)pos.z,  
+                 0, 0, 0, 1  ); 
+                 
+                 strokeWeight(2.0);
+                 stroke(col);
+                 //line(0,0,0, aim.x*scPos, aim.y*scPos, aim.z*scPos);
+                 
+                 /*{   /// TBD make text rotate to camera view    
+                   pushMatrix();
+                   
+                   Vec3D aim = new Vec3D(parentPos.x - cam.pos.x, parentPos.y-cam.pos.y, parentPos.z-cam.pos.z);
+                   Matrix4x4 m = pointMat(aim.getNormalized());  
+                   applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
+                           (float)m.matrix[1][0], (float)m.matrix[1][1], (float)m.matrix[1][2], 0,  
+                           (float)m.matrix[2][0], (float)m.matrix[2][1], (float)m.matrix[2][2], 0,  
+                           (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  );
+                     
+                
+                   popMatrix();
+                 }*/
+     popMatrix();
+
+    pushMatrix();
+    apply();    
+    
+    stroke(255,0,0);
+    //line(0,0,0, 10, 0, 0);
+    
+    drawArrow(len*sc, rad, color(col) );
+       if (textHud) {
+                     scale(0.22);
+                     String sa = nfs(len,4,1);
+                     text(name + " " + sa, 0,  50);
+                   }
+  
+    popMatrix();
   }
   
    void apply() {
@@ -54,21 +104,35 @@ class movableVectors {
                  0, 1, 0, (float)pos.y,  
                  0, 0, 1, (float)pos.z,  
                  0, 0, 0, 1  ); 
-                 
-                   
-    Matrix4x4 m = rot.getMatrix();
-
+    applyMatrix( 1, 0, 0, (float)aim.x*scPos,  
+                 0, 1, 0, (float)aim.y*scPos,  
+                 0, 0, 1, (float)aim.z*scPos,  
+                 0, 0, 0, 1  ); 
+                    
+    Matrix4x4 m = pointMat(aim);              
+      
+      
     applyMatrix( (float)m.matrix[0][0], (float)m.matrix[0][1], (float)m.matrix[0][2], 0,  
                  (float)m.matrix[1][0], (float)m.matrix[1][1], (float)m.matrix[1][2], 0,  
                  (float)m.matrix[2][0], (float)m.matrix[2][1], (float)m.matrix[2][2], 0,  
-                 (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  ); 
+                 (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  );
+               
+    applyMatrix( 0, 1, 0, 0,  
+                 0, 0, 1, 0,  
+                 1, 0, 0, 0,
+                 0, 0, 0, 1  );       
+                 
+    /*
+    /// this one is wrong
+    applyMatrix( (float)m.matrix[0][0], (float)m.matrix[1][0], (float)m.matrix[2][0], 0,  
+                 (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
+                 (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
+                 (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  );  
+               
+ */
+        
          
-         /*        
-    applyMatrix( 1, 0, 0, (float)offset.x,  
-                 0, 1, 0, (float)offset.y,  
-                 0, 0, 1, (float)offset.z,  
-                 0, 0, 0, 1  ); 
-                 */
+
   }
 }
 
@@ -93,32 +157,43 @@ void setup() {
   vehicle.pos.z = 500;
   
   /// load config file
-  lines = loadStrings("config.txt");
+  String[] lines = loadStrings("config.txt");
   int index = 0;
-  if (index < lines.length) {
+  
+  for (index =0; index < lines.length; index++) {
     String[] pieces = split(lines[index], '\t');
-    if (pieces.length > 14) {
+    if ((pieces.length > 14) && (pieces[0].charAt(0) != '#')) {
       movableVector mv = new movableVector();
       mv.name = pieces[0];
-      mv.udpInd = int(pieces[1]);
-      mv.col = new color(int(pieces[2]), int(pieces[3]), int(pieces[4]) );
-      mv.sc = Float.valueOf(pieces[5]).floatValue();
-      mv.rad = Float.valueOf(pieces[6]).floatValue();  
-      mv.len = Float.valueOf(pieces[7]).floatValue();  
+      mv.udpInd = Integer.parseInt(pieces[1]);
+      mv.col = color(int(pieces[2]), 
+                         Integer.parseInt(pieces[3]), 
+                         Integer.parseInt(pieces[4]) );
+      mv.scPos = Float.valueOf(pieces[5]).floatValue();
+      mv.sc = Float.valueOf(pieces[6]).floatValue();
+      mv.rad = Float.valueOf(pieces[7]).floatValue();  
+      mv.len = Float.valueOf(pieces[8]).floatValue();  
       
-      mv.pos = new Vec3D( Float.valueOf(pieces[8]).floatValue(),
-                          Float.valueOf(pieces[9]).floatValue(),
-                          Float.valueOf(pieces[10]).floatValue() );
+      mv.pos = new Vec3D( Float.valueOf(pieces[9]).floatValue()*mv.scPos ,
+                          Float.valueOf(pieces[10]).floatValue()*mv.scPos ,
+                          Float.valueOf(pieces[11]).floatValue()*mv.scPos );
                           
-      mv.rot = new Quaternion(Float.valueOf(pieces[11]).floatValue(),
-                  new Vec3D(Float.valueOf(pieces[12]).floatValue(),
-                            Float.valueOf(pieces[13]).floatValue(),
-                            Float.valueOf(pieces[14]).floatValue() ) );
+      mv.aim = new Vec3D( -Float.valueOf(pieces[12]).floatValue(),
+                          -Float.valueOf(pieces[13]).floatValue(),
+                          -Float.valueOf(pieces[14]).floatValue() );
+                          
+//      mv.rot = new Quaternion(Float.valueOf(pieces[11]).floatValue(),
+//                  new Vec3D(Float.valueOf(pieces[12]).floatValue(),
+//                            Float.valueOf(pieces[13]).floatValue(),
+//                            Float.valueOf(pieces[14]).floatValue() ) );
   
-      vehicle.movableVectors = append(vehicle.movableVectors, mv);  
+      
+      vehicle.movableVectors = (movableVector[]) append(vehicle.movableVectors, mv); 
+     
+     println("new movable vector " + vehicle.movableVectors[vehicle.movableVectors.length-1].name); 
+    } else {
+       println("not parsing line: " + lines[index]); 
     }
-    // Go to the next line for the next run through draw()
-    index = index + 1;
   }
   
   
@@ -128,17 +203,18 @@ void setup() {
   cam.target = vehicle;
   cam.posTracking = false;
   cam.togglePosTracking();
-  cam.pos = new Vec3D(0,-10,0);
-  cam.offset = new Vec3D(0,0,0);
+  cam.pos = new Vec3D(0,0,0);
+  cam.offset = new Vec3D(0,100,300);
   //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
   land = new terrain("78184666", "78184666.png");
+ 
   //land = new terrain("54112044","28660617.jpg");
 }
 
 //////////////////////////////////////////////////////
 
 float increase(float x) {
-     x += 1; 
+     x += 5; 
        
    if (x > 0) cam.vel.x *= 1.2;
    else x *= 0.9;
@@ -148,7 +224,7 @@ float increase(float x) {
 }
 
 float decrease(float x) {
-  x -= 1.1; 
+  x -= 5.1; 
        
   if (x < 0) x *= 1.2;
   else x *= 0.9;
@@ -466,7 +542,7 @@ void draw() {
   pushMatrix();
   translate(width/2,height/2); 
 
-  
+  //background(128);
   /// the camera needs an applyInverse()
    cam.applyInv();
      drawSky();

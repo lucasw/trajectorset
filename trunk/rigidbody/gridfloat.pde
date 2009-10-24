@@ -136,6 +136,7 @@ class terrain {
   void draw() {
     pushMatrix();
     
+    ambientLight(40,40,35);
     directionalLight(255,255,210,-0.6,-1,0);
     directionalLight(30,45,30,-0.2,1,0);
   

@@ -40,7 +40,6 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
     return;
   }
   
- 
   Vec3D udpPos = new Vec3D(rxx[1]*0.3048, rxx[0]*0.3048, rxx[2]*0.3048); 
   // convert from righthanded UEN coordinates
   Quaternion udpRot = new Quaternion(rxx[6], new Vec3D(rxx[3],-rxx[4],rxx[5]));
@@ -58,9 +57,7 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   vehicle.newVel = udpVel;
   
   /// give the vehicle all the udp data
-  vehicle.udpRaw = rxx;
-  
- 
+  vehicle.udpRaw = rxx; 
 }
 
 ////////////////////////////////////
@@ -145,16 +142,15 @@ Quaternion MatMultQuat(float[] m, Quaternion q) {
   return new Quaternion(nq3, new Vec3D(nq0,nq1,nq2));
 }
    
-
-/// Point a quaternion at a vector
-Quaternion pointQuat(Vec3D aim) {
-/// TBD add offset to pos
+   
+Matrix4x4 pointMat(Vec3D aim) {
+  /// TBD add offset to pos
   //Vec3D pnt = rotateAxis(rot, Vec3D ax) 
   
    //println("pos " + pos.x + " " + pos.y + " " + pos.z);
    //println("aim " + aim.x + " " + aim.y + " " + aim.z);
   
-   Vec3D up1 = new Vec3D(0,1,0);
+   Vec3D up1 = new Vec3D(0.01,0.99,0); //Vec3D(0,1,0);
    Vec3D right = aim.cross(up1); 
    right = right.getNormalized();
    Vec3D up = right.cross(aim);
@@ -189,6 +185,13 @@ Quaternion pointQuat(Vec3D aim) {
       println();
     }
   }
+  
+  return m;
+}
+
+/// Point a quaternion at a vector
+Quaternion pointQuat(Vec3D aim) {
+   Matrix4x4 m = pointMat(aim);
    
    Quaternion new_rot = matrixToQuat(m); 
   
@@ -289,7 +292,7 @@ class movable {
   Vec3D pqr;
   
   movableVector[] movableVectors;
-  float[] udpRaw;
+  float[] udpRaw = new float[0];
   
   /// move the movable with another movable
   boolean posTracking = false;
@@ -600,14 +603,14 @@ class movable {
       popMatrix();
 
       /// draw movableVectors
-      for (int i = 0; i < movableVectors.length(); i++) {
+      for (int i = 0; i < movableVectors.length; i++) {
          if (udpRaw.length > movableVectors[i].udpInd) {
             movableVectors[i].len = udpRaw[movableVectors[i].udpInd];
-            pushMatrix();
-            movableVectors[i].draw();
-            popMatrix();
+
          } 
-        
+         movableVectors[i].draw(pos);
+         
+
       }
 
     popMatrix();
@@ -625,9 +628,8 @@ class body extends movable {
   Vec3D force;
   Vec3D torque;  // can be multiply by dt and added to pqr? 
   
-  body() {
-   
-     force = new Vec3D(0,0,0);
+  body() {  
+     force  = new Vec3D(0,0,0);
      torque = new Vec3D(0,0,0);   
   }
   

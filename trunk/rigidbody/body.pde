@@ -20,6 +20,8 @@ Quaternion matrixToQuat(Matrix4x4 m) {
    return rawQuat;
 }
 
+int udpCounter = 0;
+int udpCounterOld = 0;
 /////////////////////////////////////////
 void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   
@@ -57,7 +59,9 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   vehicle.newVel = udpVel;
   
   /// give the vehicle all the udp data
-  vehicle.udpRaw = rxx; 
+  vehicle.udpRaw = rxx;
+ 
+ udpCounter++; 
 }
 
 ////////////////////////////////////

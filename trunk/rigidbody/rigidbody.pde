@@ -22,6 +22,9 @@ PFont font;
 boolean offline = false;
 boolean textHud = true;
 
+/// save image with each new udp
+boolean saveImageUdp = false;
+
 body vehicle; 
 movable cam;
 
@@ -190,7 +193,7 @@ void setup() {
   vehicle.pos.z = 500;
   
   /// load config file
-  String[] lines = loadStrings("config.txt");
+  String[] lines = loadStrings("config/config.txt");
   int index = 0;
   
   for (index = 0; index < lines.length; index++) {
@@ -335,6 +338,10 @@ void keyPressed() {
     
     if (key == 'h') {
        textHud = !textHud; 
+    }
+    
+    if (key == 'r') {
+      saveImageUdp = !saveImageUdp; 
     }
 //}
 }
@@ -589,37 +596,56 @@ void draw() {
   
   if (textHud) {
     pushMatrix();
-  hint(DISABLE_DEPTH_TEST);
-  hint(ENABLE_DEPTH_TEST);
-  perspective(PI/2, float(width)/float(height), 1, 1e7);
-  //noStroke();
-  translate(-width/4,-height/4); 
-
-  stroke(128);
-  fill(0,0,0);
-  String sa;
-  /// TBD handle arbitrary conversions like this x<->y better
-  sa = nfs(vehicle.pos.y,6,1);
-  text("X     " + sa, 0,  50);
-  sa = nfs(vehicle.pos.x,6,1);
-  text("Y     " + sa, 0,  80);
-  sa = nfs(vehicle.pos.z,6,1);
-  text("Z     " + sa, 0, 110);
-  sa = nfs(vehicle.vel.y,6,1);
-  text("dX/dt " + sa, 0, 140);
-  sa = nfs(vehicle.vel.x,6,1);
-  text("dY/dt " + sa, 0, 170);
-  sa = nfs(vehicle.vel.z,6,1);
-  text("dZ/dt " + sa, 0, 200);
-  popMatrix();
+    hint(DISABLE_DEPTH_TEST);
+    hint(ENABLE_DEPTH_TEST);
+    perspective(PI/2, float(width)/float(height), 1, 1e7);
+    //noStroke();
+    translate(-width/4,-height/4); 
+  
+    stroke(128);
+    fill(0,0,0);
+    String sa;
+    /// TBD handle arbitrary conversions like this x<->y better
+    sa = nfs(vehicle.pos.y,6,1);
+    text("X     " + sa, 0,  50);
+    sa = nfs(vehicle.pos.x,6,1);
+    text("Y     " + sa, 0,  80);
+    sa = nfs(vehicle.pos.z,6,1);
+    text("Z     " + sa, 0, 110);
+    sa = nfs(vehicle.vel.y,6,1);
+    text("dX/dt " + sa, 0, 140);
+    sa = nfs(vehicle.vel.x,6,1);
+    text("dY/dt " + sa, 0, 170);
+    sa = nfs(vehicle.vel.z,6,1);
+    text("dZ/dt " + sa, 0, 200);
+    popMatrix();
   }
+  
+  if (saveImageUdp) {  
+    String sa = nfs(udpCounter,6,0);
+    
+    if (udpCounterOld != udpCounter) {
+      if (textHud) {
+        fill(255,128,128);
+        text(sa, width, -50);
+      }
+      saveFrame("frames/frame_#########.png");   
+    } 
+    
+    if (textHud) {
+      //stroke(255,0,0);
+      fill(255,0,0);
+      text("[REC]", width, -20);
+    } 
+  } 
+  
+  udpCounterOld = udpCounter;
   
   if (offline) {
     counter++;
     if (counter > 200) {
       exit(); 
     }
-  
     saveFrame("test-######.png");
   }
 }

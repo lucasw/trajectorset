@@ -5,7 +5,7 @@ UDP udp;
 
 void setup() {
   
-  frameRate(50);
+  frameRate(5);
   udp = new UDP( this, 6900 );
   udp.listen( false );
 }

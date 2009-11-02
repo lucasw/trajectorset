@@ -563,20 +563,23 @@ class movable {
                  0, 0, 0, 1  ); 
 
     float rad = 3;
-    drawArrow(vel.x/10.0,  rad, color(100,105,155) );
+    drawArrow(vel.x/3.0,  rad, color(100,105,155) );
+    //text("vel X", 0,  30+vel.x/3.0);
     pushMatrix();
     applyMatrix( 0, 1, 0, 0,  
                  0, 0, 1, 0,  
                  1, 0, 0, 0,
                  0, 0, 0, 1  ); 
-    drawArrow(vel.z/10.0, rad, color(100,155,0));
+    drawArrow(vel.z/3.0, rad, color(100,155,0));
+    //text("vel Z", 0,  30+vel.z/3.0);
     popMatrix();
     pushMatrix();
     applyMatrix( 0, 1, 0, 0,  
                  1, 0, 0, 0,  
                  0, 0, 1, 0,
                  0, 0, 0, 1  ); 
-    drawArrow(vel.y/10.0, rad, color(155,100,0));
+    drawArrow(vel.y/3.0, rad, color(155,100,0));
+    //text("vel Y", 0,  30+vel.y/3.0);
     popMatrix();
       
     popMatrix();
@@ -591,12 +594,14 @@ class movable {
     float len = 60;
     float rad = 7;
     drawArrow(len*2.5,  rad*1.5, color(100,105,255) );
+    text("X", len*2.5*1.3,0);
       pushMatrix();
       applyMatrix( 0, 1, 0, 0,  
                    0, 0, 1, 0,  
                    1, 0, 0, 0,
                    0, 0, 0, 1  ); 
       drawArrow(len, rad, color(0,255,0));
+      text("Z", len*1.3,0);
       popMatrix();
       pushMatrix();
        applyMatrix( 0, 1, 0, 0,  
@@ -604,6 +609,7 @@ class movable {
                     0, 0, 1, 0,
                     0, 0, 0, 1  ); 
       drawArrow(len, rad, color(255,0,0));
+      text("Y", len*1.3, 0);
       popMatrix();
 
       /// draw movableVectors

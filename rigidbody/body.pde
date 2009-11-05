@@ -42,11 +42,13 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
     return;
   }
   
-  Vec3D udpPos = new Vec3D(rxx[1]*0.3048, rxx[0]*0.3048, rxx[2]*0.3048); 
-  // convert from righthanded UEN coordinates
-  Quaternion udpRot = new Quaternion(rxx[6], new Vec3D(rxx[3],-rxx[4],rxx[5]));
-  udpRot = udpRot.multiply(new Quaternion(cos(PI/4), new Vec3D(0,sin(PI/4),0)) ); 
-  udpRot = (new Quaternion(cos(-PI/4), new Vec3D(sin(-PI/4),0,0))).multiply(udpRot); 
+  Vec3D udpPos = new Vec3D(rxx[1]*0.3048, rxx[0]*0.3048, -rxx[2]*0.3048); 
+  
+  //println(rxx[3] + " " + rxx[4] + " " + rxx[5] + " " + rxx[6]);
+  
+  Quaternion udpRot = new Quaternion(rxx[3], new Vec3D(rxx[5],rxx[4],rxx[6]));
+  udpRot = udpRot.multiply(new Quaternion(cos(PI/4), new Vec3D(0,0,sin(PI/4))) ); 
+  udpRot = udpRot.multiply(new Quaternion(cos(PI/2), new Vec3D(sin(PI/2),0,0)) ); 
   
   Vec3D udpVel = new Vec3D(rxx[8]*0.3048, rxx[7]*0.3048, rxx[9]*0.3048);
   
@@ -61,7 +63,7 @@ void receive( byte[] data, String ip, int port ) {	// <-- extended handler
   /// give the vehicle all the udp data
   vehicle.udpRaw = rxx;
  
- udpCounter++; 
+  udpCounter++; 
 }
 
 ////////////////////////////////////
@@ -229,7 +231,7 @@ Quaternion pointQuat(Vec3D aim) {
   return new_rot;
 }
    
-   void drawArrow(float len, float rad, color col ) {
+void drawArrow(float len, float rad, color col ) {
   pushMatrix();
         
   noStroke();
@@ -551,8 +553,9 @@ class movable {
   }
   
   void draw() {
-
-  {
+    pushMatrix();
+   
+  { 
     drawHistory();
     
     /// draw velocity vectors
@@ -581,9 +584,9 @@ class movable {
     drawArrow(vel.y/3.0, rad, color(155,100,0));
     //text("vel Y", 0,  30+vel.y/3.0);
     popMatrix();
-      
-    popMatrix();
+    popMatrix();  
   }
+   
     
     if (true) {
       
@@ -595,35 +598,37 @@ class movable {
     float rad = 7;
     drawArrow(len*2.5,  rad*1.5, color(100,105,255) );
     text("X", len*2.5*1.3,0);
-      pushMatrix();
-      applyMatrix( 0, 1, 0, 0,  
-                   0, 0, 1, 0,  
-                   1, 0, 0, 0,
-                   0, 0, 0, 1  ); 
-      drawArrow(len, rad, color(0,255,0));
-      text("Z", len*1.3,0);
-      popMatrix();
-      pushMatrix();
-       applyMatrix( 0, 1, 0, 0,  
-                    1, 0, 0, 0,  
-                    0, 0, 1, 0,
-                    0, 0, 0, 1  ); 
-      drawArrow(len, rad, color(255,0,0));
-      text("Y", len*1.3, 0);
-      popMatrix();
+    pushMatrix();
+    applyMatrix( 0, 1, 0, 0,  
+                 0, 0, 1, 0,  
+                 1, 0, 0, 0,
+                 0, 0, 0, 1  ); 
+    drawArrow(len, rad, color(0,255,0));
+    text("Z", len*1.3,0);
+    popMatrix();
+    pushMatrix();
+    applyMatrix( 0, 1, 0, 0,  
+                  1, 0, 0, 0,  
+                  0, 0, 1, 0,
+                  0, 0, 0, 1  ); 
+    drawArrow(len, rad, color(255,0,0));
+    text("Y", len*1.3, 0);
+    popMatrix();
 
-      /// draw movableVectors
-      for (int i = 0; i < movableVectors.length; i++) {
-         if (udpRaw.length > movableVectors[i].udpInd) {
-            movableVectors[i].len = udpRaw[movableVectors[i].udpInd];
+    /// draw movableVectors
+    for (int i = 0; i < movableVectors.length; i++) {
+       if (udpRaw.length > movableVectors[i].udpInd) {
+          movableVectors[i].len = udpRaw[movableVectors[i].udpInd];
 
-         } 
-         movableVectors[i].draw();
-         movableVectors[i].drawHud(rot);
-      }
+       } 
+       movableVectors[i].draw();
+       movableVectors[i].drawHud(rot);
+    }
     popMatrix();
     }
+    popMatrix();
   }
+  
 };
 
 class body extends movable {

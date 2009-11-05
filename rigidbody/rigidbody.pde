@@ -240,11 +240,9 @@ void setup() {
   cam.posTracking = false;
   cam.togglePosTracking();
   cam.pos = new Vec3D(0,0,0);
-  cam.offset = new Vec3D(0,100,300);
-  //land = new terrain("G:/other/western_wa/ned_1_3_78184666/78184666");
-  land = new terrain("78184666", "78184666.png");
- 
-  //land = new terrain("54112044","28660617.jpg");
+  cam.offset = new Vec3D(0,100,-300);
+  //land = new terrain("78184666", "78184666.png");
+  land = new terrain("54112044","28660617.jpg");
 }
 
 //////////////////////////////////////////////////////
@@ -289,11 +287,11 @@ void keyPressed() {
        cam.vel = cam.vel.add(dir.scale(10) ); 
     }
     if (key == 'w') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
        cam.vel = cam.vel.add(dir.scale(10) );
     }
     if (key == 's') {
-       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
+       Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
        cam.vel = cam.vel.add(dir.scale(10) );
     }    
     if (key == 'e') {
@@ -574,18 +572,23 @@ void draw() {
   /////////////////////////////////////////
   /// draw 
   pushMatrix();
+  /// use right handed coordinates
+   scale(1,1,-1);
   translate(width/2,height/2); 
 
   //background(128);
   /// the camera needs an applyInverse()
+  
   cam.applyInv();
+  
   drawSky();
   drawGround();
     //drawGrid();
   land.draw();
 
-  //rotateZ(-PI/2);
- 
+
+  
+  
   vehicle.draw();
   
   popMatrix();

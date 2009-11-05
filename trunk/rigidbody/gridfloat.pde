@@ -30,7 +30,7 @@ class terrain {
   Vec3D maxur, minll;
  
   float hToY(int h) {
-     return ((-h + nrows/2)*dy);
+     return ((h - nrows/2)*dy);
   }
   
   float wToX(int w) {   

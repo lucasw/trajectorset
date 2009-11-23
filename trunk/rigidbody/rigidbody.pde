@@ -15,6 +15,7 @@ import hypermedia.net.*;
 import processing.opengl.*;
 import toxi.geom.*;
 
+UDP udp;
 
 PFont font;
 
@@ -32,9 +33,40 @@ terrain land;
 
 float fov = PI/3;
 float autoFov = 1.0;
-boolean useAutoFov = true;
+boolean useAutoFov = false;
 
-UDP udp;
+void defaults() {
+  fov = PI/3;
+  autoFov = 1.0;
+  useAutoFov = false;
+  saveImageUdp = false;
+  offline = false;
+  textHud = true;
+  
+  /// TBD make reset method for movable
+  vehicle.pos.x = 50;
+  vehicle.pos.y = 50;
+  vehicle.pos.z = 500;
+  vehicle.rot = new Quaternion(0,new Vec3D(1,0,0));
+  vehicle.rot = vehicle.rot.multiply(new Quaternion(cos(-PI/4),new Vec3D(0,0,sin(-PI/4))));
+  vehicle.vel = new Vec3D(0,0,0);
+  vehicle.posHistory = new Vec3D[vehicle.historyMax];
+  vehicle.historyStart =0;
+  vehicle.historyEnd = 0;
+  
+  cam.target = vehicle;
+  cam.posTracking = false;
+  cam.togglePosTracking();
+  
+  if (!cam.posTracking) {
+    cam.togglePosTracking();    
+  }
+  
+  cam.pos = new Vec3D(0,0.001,0.001);
+  cam.offset = new Vec3D(0,0,-130);
+}
+
+
 
 /// these are arbitrary movable relative vectors to be drawn with
 /// udp data
@@ -86,9 +118,13 @@ class movableVector {
                  (float)m.matrix[2][0], (float)m.matrix[2][1], (float)m.matrix[2][2], 0,  
                  (float)m.matrix[3][0], (float)m.matrix[3][1], (float)m.matrix[3][2], 1  );  
         if (textHud) {
-                     scale(0.22);
-                     String sa = nfs(len,4,1);
-                     text(" " + name + "\n" + sa, 0,  50);
+                     scale(0.32);
+                     String sa = nfs(len,3,1);
+                     if (len == 0.0) {
+                       text(" " + name, 0,  50);
+                     } else {
+                       text(" " + name + "\n" + sa, 0,  50);                       
+                     }
                    }              
     popMatrix();  
   }
@@ -178,7 +214,7 @@ class movableVector {
 ////////////////////////////////////////////////////////
 
 void setup() {
-  size(800,600,P3D); 
+  size(1024,768,P3D); 
   frameRate(15);
   
   font = loadFont("CourierNewPS-BoldMT-32.vlw");
@@ -233,38 +269,36 @@ void setup() {
   }
   
   
-  vehicle.rot = vehicle.rot.multiply(new Quaternion(cos(-PI/4),new Vec3D(0,0,sin(-PI/4))));
-  
+
   cam = new movable();
-  cam.target = vehicle;
-  cam.posTracking = false;
-  cam.togglePosTracking();
-  cam.pos = new Vec3D(0,0,0);
-  cam.offset = new Vec3D(0,100,-300);
+ 
   //land = new terrain("78184666", "78184666.png");
   land = new terrain("54112044","28660617.jpg");
+  
+  defaults();
 }
 
 //////////////////////////////////////////////////////
 
 float increase(float x) {
-     x += 5; 
+     x += 0.3; 
        
-   if (x > 0) cam.vel.x *= 1.2;
-   else x *= 0.9;
+   if (x > 0) x *= 1.1;
+   else x *= 0.95;
    
    return x;
-  
 }
 
 float decrease(float x) {
-  x -= 5.1; 
+  x -= 0.15; 
        
-  if (x < 0) x *= 1.2;
-  else x *= 0.9;
+  if (x < 0) x *= 1.1;
+  else x *= 0.95;
   
   return x;
 }
+
+boolean helpHud = false;
 
 void keyPressed() {
  //if (keyPressed) {
@@ -288,11 +322,13 @@ void keyPressed() {
     }
     if (key == 'w') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,-1));
-       cam.vel = cam.vel.add(dir.scale(10) );
+       cam.vel = cam.vel.add(dir.scale(6) );
+       //cam.offsetVel.x = increase(cam.offsetVel.x); 
     }
     if (key == 's') {
        Vec3D dir = rotateAxis(cam.rot, new Vec3D(0,0,1));
-       cam.vel = cam.vel.add(dir.scale(10) );
+       cam.vel = cam.vel.add(dir.scale(5) );
+       //cam.offsetVel.x = decrease(cam.offsetVel.x); 
     }    
     if (key == 'e') {
        cam.offsetVel.z = increase(cam.offsetVel.z); 
@@ -334,12 +370,51 @@ void keyPressed() {
       //println(vehicle.vel.x + ", " + vehicle.vel.y + ", " + vehicle.vel.z);    
     }
     
-    if (key == 'h') {
+    if (key == 'g') {
        textHud = !textHud; 
+    }
+    if (key == 'h') {
+       helpHud = !helpHud; 
     }
     
     if (key == 'r') {
       saveImageUdp = !saveImageUdp; 
+    }
+    
+    /// reset to defaults
+    if (key =='o') {
+      defaults();
+    }
+    
+    if (key =='1') {
+     // defaults();
+      vehicle.pos = new Vec3D(300,0,0);
+    }
+    
+    if (key =='2') {
+      //defaults();
+      vehicle.pos = new Vec3D(0,300,0);
+    }
+    
+    if (key =='3') {
+      //defaults();
+      vehicle.pos = new Vec3D(0,0,300);
+    }
+    
+        
+    if (key =='4') {
+     // defaults();
+      vehicle.pos = new Vec3D(-300,0,0);
+    }
+    
+    if (key =='5') {
+      //defaults();
+      vehicle.pos = new Vec3D(0,-300,0);
+    }
+    
+    if (key =='6') {
+      //defaults();
+      vehicle.pos = new Vec3D(0,0,-300);
     }
 //}
 }
@@ -470,7 +545,7 @@ void  drawSky() {
 //      f1 *= f1;
 //      f2 *= f2;
       
-      for (int j = 0; j <= maxInd; j++) {  
+      for (int j = 0; j < maxInd; j++) {  
          float theta = (float)j/(float)maxInd*2*PI;
          fill(lerpColor( color(255,255,255), top, f1 ));
          vertex( r*cos(theta)*cos(psi),  r*sin(theta)*cos(psi),  r*sin(psi));// (float)j/(float)maxInd*100.0,     (float)i/(float)maxInd*100.0);
@@ -532,6 +607,7 @@ void draw() {
   if (cam.aimTracking && useAutoFov) tempFov*=autoFov;
   perspective(tempFov, float(width)/float(height), 1, 1e7);
 
+  pushMatrix();
 
   handleMouse();
  
@@ -574,7 +650,7 @@ void draw() {
   pushMatrix();
   /// use right handed coordinates
    scale(1,1,-1);
-  translate(width/2,height/2); 
+  translate(width/2,height*0.5); 
 
   //background(128);
   /// the camera needs an applyInverse()
@@ -583,8 +659,8 @@ void draw() {
   
   drawSky();
   drawGround();
-    //drawGrid();
-  land.draw();
+  drawGrid();
+  //land.draw();
 
 
   
@@ -609,9 +685,11 @@ void draw() {
     fill(0,0,0);
     String sa;
     /// TBD handle arbitrary conversions like this x<->y better
-    sa = nfs(vehicle.pos.y,6,1);
-    text("X     " + sa, 0,  50);
+    //sa = nfs(vehicle.pos.y,6,1);
     sa = nfs(vehicle.pos.x,6,1);
+    text("X     " + sa, 0,  50);
+    // sa = nfs(vehicle.pos.x,6,1);
+    sa = nfs(vehicle.pos.y,6,1);
     text("Y     " + sa, 0,  80);
     sa = nfs(vehicle.pos.z,6,1);
     text("Z     " + sa, 0, 110);
@@ -624,14 +702,16 @@ void draw() {
     popMatrix();
   }
   
-  if (saveImageUdp) {  
-    String sa = nfs(udpCounter,6,0);
-    
-    if (udpCounterOld != udpCounter) {
-      if (textHud) {
+  String sa = nfs(udpCounter,6,0);
+  if (textHud) {
         fill(255,128,128);
         text(sa, width, -50);
       }
+      
+  if (saveImageUdp) {  
+    
+    if (udpCounterOld != udpCounter) {
+      
       saveFrame("frames/frame_#########.png");   
     } 
     
@@ -651,6 +731,12 @@ void draw() {
     }
     saveFrame("test-######.png");
   }
+  
+  popMatrix();
+  noLights();
+  stroke(0);
+  line(width/2-20, height/2, width/2+20, height/2);
+  line(width/2, height/2-20, width/2, height/2+20);
 }
 
 

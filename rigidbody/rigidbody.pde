@@ -272,8 +272,8 @@ void setup() {
 
   cam = new movable();
  
-  //land = new terrain("78184666", "78184666.png");
-  land = new terrain("54112044","28660617.jpg");
+  land = new terrain("78184666", "78184666.png");
+  //land = new terrain("54112044","28660617.jpg");
   
   defaults();
 }
@@ -660,7 +660,7 @@ void draw() {
   drawSky();
   drawGround();
   drawGrid();
-  //land.draw();
+  land.draw();
 
 
   

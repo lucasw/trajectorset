@@ -19,6 +19,8 @@ UDP udp;
 
 PFont font;
 
+boolean useOpenGl = false;
+
 /// offline rendering
 boolean offline = false;
 boolean textHud = true;
@@ -214,8 +216,12 @@ class movableVector {
 ////////////////////////////////////////////////////////
 
 void setup() {
-  size(1024,768,P3D); 
-  frameRate(15);
+  if (useOpenGl) {
+    size(1024,768,OPENGL);
+  } else {
+    size(1024,768,P3D); 
+  }
+  frameRate(30);
   
   font = loadFont("CourierNewPS-BoldMT-32.vlw");
   textFont(font, 32);
@@ -648,31 +654,27 @@ void draw() {
   /////////////////////////////////////////
   /// draw 
   pushMatrix();
+  //if (!useOpenGl) {
   /// use right handed coordinates
    scale(1,1,-1);
+  //}
   translate(width/2,height*0.5); 
 
   //background(128);
   /// the camera needs an applyInverse()
-  
   cam.applyInv();
   
   drawSky();
   drawGround();
   drawGrid();
+  /// land drawing is super slow in opengl
   land.draw();
 
-
-  
-  
   vehicle.draw();
   
   popMatrix();
   
-  
-    /// write text to screen
-  
-  
+  /// write text to screen  
   if (textHud) {
     pushMatrix();
     hint(DISABLE_DEPTH_TEST);

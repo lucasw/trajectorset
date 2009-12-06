@@ -152,10 +152,7 @@ class movable {
           autoFov = 1.0; 
         }
         
-        aim = aim.getNormalized();
-        
-      
-      
+        aim = aim.getNormalized();         
         offsetRot = pointQuat(aim.getNormalized());
         
         if (false) { 
@@ -257,12 +254,14 @@ class movable {
     
              
     Matrix4x4 m = rot.getMatrix();  
-    if (aimTracking) m = offsetRot.getMatrix(); 
+    if (aimTracking) { m = offsetRot.getMatrix(); }
+
     
     applyMatrix( (float)m.matrix[0][0], (float)m.matrix[1][0], (float)m.matrix[2][0], 0,  
                  (float)m.matrix[0][1], (float)m.matrix[1][1], (float)m.matrix[2][1], 0,  
                  (float)m.matrix[0][2], (float)m.matrix[1][2], (float)m.matrix[2][2], 0,  
                  (float)m.matrix[0][3], (float)m.matrix[1][3], (float)m.matrix[2][3], 1  ); 
+    
     
     if (attTracking) {
         rotateZ(PI/2);
@@ -279,6 +278,7 @@ class movable {
                  0, 0, 1, (float)-target.pos.z,  
                  0, 0, 0, 1  ); 
     }
+    
     
     applyMatrix( 1, 0, 0, (float)pos.x,  
                  0, 1, 0, (float)pos.y,  
